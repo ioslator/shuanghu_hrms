@@ -1,10 +1,6 @@
-server:
-  port: 8080
-
 spring:
-  profiles:
-    active: jdbc
-
-  # 加上下面这行！告诉 Spring Boot 别自动连数据库
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  datasource:
+    url: jdbc:mysql://rm-bp1aqaxinsn19f531io.mysql.rds.aliyuncs.com:3306/shuanghu_hr_db?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8
+    username: shaunghu
+    password: ShuangHu_hrms
+    driver-class-name: com.mysql.cj.jdbc.Driver

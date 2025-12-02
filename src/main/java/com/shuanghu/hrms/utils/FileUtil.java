@@ -1,4 +1,4 @@
-package utils;
+package com.shuanghu.hrms.utils;
 
 import jakarta.servlet.http.Part;
 import java.io.File;

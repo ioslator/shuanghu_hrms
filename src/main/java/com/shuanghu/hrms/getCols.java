@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import utils.JdbcUtil;
+import com.shuanghu.hrms.utils.JdbcUtil;
 
 @WebServlet("/getCols")
 public class getCols extends HttpServlet {

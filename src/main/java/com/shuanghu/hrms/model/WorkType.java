@@ -1,4 +1,4 @@
-package model;
+package com.shuanghu.hrms.model;
 
 public class WorkType {
     private int work_type_id;

@@ -7,7 +7,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import utils.Tool1;
+import com.shuanghu.hrms.utils.Tool1;
 
 /**
  * Servlet implementation class delSt

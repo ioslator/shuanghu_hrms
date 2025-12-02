@@ -2,21 +2,19 @@ package com.shuanghu.hrms;
 
 import java.io.IOException;
 import java.io.Serial;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
+import java.io.PrintWriter;
+import java.util.Date;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
-import utils.JdbcUtil;
+import com.shuanghu.hrms.utils.JdbcUtil;
 
 @WebServlet("/getCol")
 public class getCol extends HttpServlet {
@@ -31,55 +29,63 @@ public class getCol extends HttpServlet {
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.setContentType("application/json;charset=UTF-8");
+        PrintWriter out = resp.getWriter();
 
-        System.out.println("========== getCol 被访问到了！时间：" + new java.util.Date() + " ==========");
-        System.out.println("请求参数: tableName=" + request.getParameter("tableName")
-                + ", keyName=" + request.getParameter("keyName"));
+        String tableName = req.getParameter("tableName");
+        String keyName = req.getParameter("keyName"); // 比如 dept_id,dept_name
 
+        System.out.println("========== getCol 被访问到了！时间：" + new Date() + " ==========");
+        System.out.println("请求参数: tableName=" + tableName + ", keyName=" + keyName);
 
-        response.setContentType("application/json;charset=utf-8");
-
-        String tableName = request.getParameter("tableName");
-        String keyName   = request.getParameter("keyName"); // 例如: dept_id,dept_name
-
-        if (tableName == null || keyName == null) {
-            response.getWriter().write("[]");
-            return;
-        }
-
-        // 防止 SQL 注入（简单过滤）
-        if (!keyName.matches("[a-zA-Z_, ]+")) {
-            response.getWriter().write("[]");
-            return;
-        }
-
-        String sql = "SELECT " + keyName + " FROM " + tableName;
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
         JSONArray jsonArray = new JSONArray();
 
-        try (Connection conn = JdbcUtil.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {   // 关键：这里不会返回 null！
+        try {
+            conn = JdbcUtil.getConnection();
+            if (conn == null) {
+                out.print("[]");
+                return;
+            }
+
+            String[] keys = keyName.split(",");
+            String sql = "SELECT " + keys[0] + " as value, " + keys[1] + " as label FROM " + tableName;
+            ps = conn.prepareStatement(sql);
+            rs = ps.executeQuery();
+
+            // ======== 紧急调试代码开始（查到数据就一定打印出来）========
+            System.out.println("SQL 执行成功！正在遍历结果...");
+            int count = 0;
+            while (rs.next()) {
+                count++;
+                System.out.println("第 " + count + " 条数据：value=" + rs.getObject(1) + ", label=" + rs.getString(2));
+
+                JSONObject obj = new JSONObject();
+                obj.put("value", rs.getObject(1));
+                obj.put("label", rs.getString(2));
+                jsonArray.add(obj);
+            }
+            System.out.println("一共查到 " + count + " 条数据！");
+// ======== 紧急调试代码结束 ========
 
             while (rs.next()) {
-                JSONObject obj = new JSONObject(true);  // true = 保持列顺序
-                int count = rs.getMetaData().getColumnCount();
-                for (int i = 1; i <= count; i++) {
-                    String colName = rs.getMetaData().getColumnName(i);
-                    Object value = rs.getObject(i);
-                    obj.put(colName, value == null ? "" : value);
-                }
+                JSONObject obj = new JSONObject();
+                obj.put("value", rs.getString("value"));
+                obj.put("label", rs.getString("label"));
                 jsonArray.add(obj);
             }
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            // 出任何数据库错都返回空数组，防止前端卡死
-            response.getWriter().write("[]");
-            return;
-        }
+            out.print(jsonArray.toString());
+            System.out.println("成功返回数据：" + jsonArray.toString());
 
-        response.getWriter().write(jsonArray.toJSONString());
+        } catch (Exception e) {
+            e.printStackTrace();
+            out.print("[]");
+        } finally {
+            JdbcUtil.close(rs, ps, conn);
+        }
     }
 }

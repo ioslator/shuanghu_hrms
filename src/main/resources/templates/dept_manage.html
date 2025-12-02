@@ -124,18 +124,18 @@
 <div id="deptApp">
     <h2>部门信息管理</h2>
 
-    <div class="top-controls">
-        <label>
-            <select v-model="selectedDeptId" @change="loadDeptDetail" class="input-field">
-                <option value="">请选择部门 (进行编辑或删除)</option>
-                <option v-for="dept in deptList" :value="dept.dept_id">{{dept.dept_name}}</option>
-            </select>
-        </label>
+    <<div class="top-controls">
+    <label>
+        <select v-model="selectedDeptId" @change="loadDeptDetail" class="input-field">
+            <option value="">请选择部门 (进行编辑或删除)</option>
+            <option v-for="dept in deptList" :value="dept.value">{{dept.label}}</option>
+        </select>
+    </label>
 
-        <button @click="deleteDept" :disabled="!selectedDeptId" class="btn-base btn-danger">
-            删除选中部门
-        </button>
-    </div>
+    <button @click="deleteDept" :disabled="!selectedDeptId" class="btn-base btn-danger">
+        删除选中部门
+    </button>
+</div>
 
     <form id="deptForm">
         <div class="form-group">
@@ -186,13 +186,11 @@
             this.loadDeptList();
         },
         methods: {
-            // Vue逻辑保持不变
             loadDeptList() {
                 const params = new URLSearchParams();
                 params.append('tableName', 'dept');
                 params.append('keyName', 'dept_id,dept_name');
 
-                // 强制写死完整地址 + 加上时间戳防缓存
                 axios.post("/getCol?t=" + new Date().getTime(), params, {
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
                 }).then(res => {
@@ -219,14 +217,12 @@
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
                 }).then(res => {
                     if (res.data && res.data.length > 0) {
-                        // 【关键修改开始】手动将所有键名转为小写，防止大小写不匹配问题
                         let rawData = res.data[0];
                         let lowerData = {};
                         for (let key in rawData) {
                             lowerData[key.toLowerCase()] = rawData[key];
                         }
                         this.deptData = lowerData;
-                        // 【关键修改结束】
 
                         console.log("处理后的部门数据：", JSON.stringify(this.deptData)); // 方便在控制台查看
                     }
@@ -274,7 +270,6 @@
                     alert("保存成功");
                     this.loadDeptList();
                     if (!this.deptData.dept_id) {
-                        // 新增成功后清空表单
                         this.deptData = { dept_id: "", dept_name: "", dept_parent_id: "", dept_status: 1 };
                         this.selectedDeptId = "";
                     }

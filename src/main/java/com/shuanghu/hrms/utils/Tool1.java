@@ -1,4 +1,4 @@
-package utils;
+package com.shuanghu.hrms.utils;
 
 import java.io.IOException;
 import java.io.PrintWriter;

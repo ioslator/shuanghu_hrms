@@ -1,4 +1,4 @@
-package model;
+package com.shuanghu.hrms.model;
 
 public class Dept {
     private int dept_id;
