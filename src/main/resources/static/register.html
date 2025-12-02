@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双虎人事管理系统 - 注册</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        /* 复用 login.html 中的样式 */
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%);
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        .login-card { /* 注册页面复用 login-card 样式 */
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 350px;
+            text-align: center;
+        }
+
+        .title {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .input-field:focus {
+            border-color: #8ec5fc;
+            box-shadow: 0 0 5px rgba(142, 197, 252, 0.5);
+        }
+
+        .btn-register {
+            width: 100%;
+            padding: 12px;
+            background-color: #4facfe;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        .btn-register:hover {
+            background-color: #00f2fe;
+        }
+
+        .btn-register:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #4facfe;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .error-msg {
+            color: #ff4d4f;
+            font-size: 13px;
+            margin-top: 10px;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div class="login-card">
+        <div class="title">新用户注册</div>
+        <div class="subtitle">双虎人事管理系统</div>
+
+        <div class="form-group">
+            <label>用户名</label>
+            <input type="text" v-model="form.username" class="input-field" placeholder="设置您的用户名">
+        </div>
+
+        <div class="form-group">
+            <label>密码</label>
+            <input type="password" v-model="form.password" class="input-field" placeholder="设置登录密码">
+        </div>
+
+        <div class="form-group">
+            <label>确认密码</label>
+            <input type="password" v-model="form.confirmPassword" class="input-field" placeholder="请再次输入密码">
+        </div>
+
+        <div class="form-group">
+            <label>注册身份</label>
+            <select v-model="form.role" class="input-field">
+                <option value="employee">普通员工 (默认)</option>
+                <option value="visitor">访客</option>
+            </select>
+        </div>
+
+
+        <button class="btn-register" @click="handleRegister" :disabled="loading">
+            {{ loading ? '注册中...' : '注 册' }}
+        </button>
+
+        <div class="error-msg">{{ message }}</div>
+
+        <a href="login.html" class="btn-link">已有账户？点此返回登录</a>
+    </div>
+</div>
+<script>
+    const { createApp, ref, reactive } = Vue;
+
+    createApp({
+        setup() {
+            const form = reactive({
+                username: '',
+                password: '',
+                confirmPassword: '',
+                role: 'employee' // 默认注册身份为普通员工
+            });
+
+            const loading = ref(false);
+            const message = ref('');
+
+            // 注册逻辑
+            const handleRegister = () => {
+                if (!form.username || !form.password || !form.confirmPassword) {
+                    message.value = "请填写所有必填信息";
+                    return;
+                }
+
+                if (form.password !== form.confirmPassword) {
+                    message.value = "两次输入的密码不一致！";
+                    return;
+                }
+
+                // 建议：增加密码复杂度正则校验
+                const pwdRegex = /^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z\d]{6,16}$/;
+                if (!pwdRegex.test(form.password)) {
+                    message.value = "密码必须包含字母和数字，长度在6到16位之间。";
+                    return;
+                }
+
+                loading.value = true;
+                message.value = "";
+
+                // 模拟后端注册请求（实际开发中，这里需要发送 AJAX 请求到服务器）
+                setTimeout(() => {
+                    loading.value = false;
+
+                    // 假设注册成功
+                    message.value = "注册成功！即将跳转登录页面...";
+                    alert(`用户 ${form.username} 注册成功，身份为：${getRoleName(form.role)}`);
+
+                    // 注册成功后跳转回登录页
+                    setTimeout(() => {
+                        window.location.href = "login.html";
+                    }, 1500);
+
+                }, 1000);
+            };
+
+            // 角色中文显示
+            const getRoleName = (role) => {
+                const map = {
+                    employee: '普通员工',
+                    visitor: '访客'
+                };
+                return map[role] || role;
+            };
+
+            return {
+                form,
+                loading,
+                message,
+                handleRegister,
+                getRoleName
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

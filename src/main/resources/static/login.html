@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双虎人事管理系统 - 登录</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        /* 简单的 CSS 美化 */
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* 背景色 */
+            background: linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%);
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 350px;
+            text-align: center;
+        }
+
+        .title {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box; /* 确保内边距不撑大宽度 */
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .input-field:focus {
+            border-color: #8ec5fc;
+            box-shadow: 0 0 5px rgba(142, 197, 252, 0.5);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background-color: #4facfe;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        .btn-login:hover {
+            background-color: #00f2fe;
+        }
+
+        .btn-login:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .error-msg {
+            color: #ff4d4f;
+            font-size: 13px;
+            margin-top: 10px;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div class="login-card">
+        <div class="title">双虎人事管理系统</div>
+        <div class="subtitle">Shuanghu Personnel Management System</div>
+
+        <div class="form-group">
+            <label>用户名 / 工号</label>
+            <label>
+                <input type="text" v-model="form.username" class="input-field" placeholder="请输入用户名">
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label>密码</label>
+            <label>
+                <input type="password" v-model="form.password" class="input-field" placeholder="请输入密码">
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label>登录身份</label>
+            <label>
+                <select v-model="form.role" class="input-field">
+                    <option disabled value="">请选择您的身份</option>
+                    <option value="employee">普通员工</option>
+                    <option value="manager">管理人员</option>
+                    <option value="admin">超级用户</option>
+                    <option value="visitor">访客</option>
+                </select>
+            </label>
+        </div>
+
+        <button class="btn-login" @click="handleLogin" :disabled="loading">
+            {{ loading ? '登录中...' : '登 录' }}
+        </button>
+
+        <div class="error-msg">{{ message }}</div>
+    </div>
+</div>
+<script>
+    const { createApp, ref, reactive, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            // 1. 表单数据
+            const form = reactive({
+                username: '',
+                password: '',
+                role: ''
+            });
+
+            const loading = ref(false);
+            const message = ref('');
+
+            // 2. 记录密码错误次数（关键！）
+            const wrongPwdCount = ref(0);
+
+            // 3. 辅助函数：设置 Cookie（带过期时间，单位：天）
+            const setCookie = (name, value, days = 7) => {
+                const exp = new Date();
+                exp.setTime(exp.getTime() + days * 24 * 60 * 60 * 1000);
+                document.cookie = `${name}=${encodeURIComponent(value)};expires=${exp.toUTCString()};path=/`;
+            };
+
+            // 4. 获取 Cookie
+            const getCookie = (name) => {
+                const reg = new RegExp("(^| )" + name + "=([^;]*)(;|$)");
+                const arr = document.cookie.match(reg);
+                return arr ? decodeURIComponent(arr[2]) : null;
+            };
+
+            // 5. 删除所有相关 Cookie
+            const clearLoginCookies = () => {
+                document.cookie = "username=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                document.cookie = "password=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                document.cookie = "role=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+            };
+
+            // 6. 页面加载时自动填充（记住密码功能）
+            onMounted(() => {
+                const savedUser = getCookie("username");
+                const savedPwd = getCookie("password");
+                const savedRole = getCookie("role");
+
+                if (savedUser && savedPwd && savedRole) {
+                    form.username = savedUser;
+                    form.password = savedPwd;
+                    form.role = savedRole;
+                    message.value = "已自动填充上次登录信息";
+                }
+            });
+
+            // 7. 主登录逻辑（全部要求都在这里实现！）
+            const handleLogin = () => {
+                if (!form.username || !form.password || !form.role) {
+                    message.value = "请填写完整的登录信息";
+                    return;
+                }
+
+                loading.value = true;
+                message.value = "";
+
+                // 模拟后端校验（实际项目发 AJAX）
+                setTimeout(() => {
+                    loading.value = false;
+
+                    // 正确账号密码（可以自己改）
+                    const correctUser = "admin";
+                    const correctPwd = "123456";
+
+                    // 情况1：用户名完全错误 → 跳转注册页
+                    if (form.username !== correctUser) {
+                        clearLoginCookies(); // 清掉可能的旧 Cookie
+                        message.value = "用户名不存在，正在跳转注册...";
+                        setTimeout(() => {
+                            alert("用户名不存在！请先注册");
+                            window.location.href = "register.html"; // 跳转注册页
+                        }, 1000);
+                        return;
+                    }
+
+                    // 情况2：用户名正确，密码错误
+                    if (form.password !== correctPwd) {
+                        wrongPwdCount.value++;
+
+                        if (wrongPwdCount.value >= 3) {
+                            // 三次失败 → 严重警告 + 关闭浏览器
+                            clearLoginCookies();
+                            alert("⚠️ 密码错误已达3次！系统已锁定，为安全起见即将关闭浏览器！");
+                            setTimeout(() => {
+                                window.open('', '_self').close(); // 关闭当前窗口
+                                // 部分浏览器会阻止，备用方案：
+                                // window.location.href = "about:blank";
+                            }, 500);
+                        } else {
+                            message.value = `密码错误！还剩 ${3 - wrongPwdCount.value} 次机会`;
+                        }
+                        return;
+                    }
+
+                    // 情况3：全部正确 → 登录成功！
+                    if (form.username === correctUser && form.password === correctPwd) {
+                        wrongPwdCount.value = 0; // 重置错误次数
+
+                        // 写入 Cookie（记住用户名、密码、权限）
+                        setCookie("username", form.username, 7);
+                        setCookie("password", form.password, 7);
+                        setCookie("role", form.role, 7);
+
+                        message.value = "登录成功！正在跳转主页...";
+                        alert(`欢迎 ${form.username}（${getRoleName(form.role)}）登录系统！`);
+
+                        // 跳转到主页（你项目的首页）
+                        setTimeout(() => {
+                            window.location.href = "dept_manage.html";  // ← 改成你的主页文件名
+                        }, 800);
+                    }
+                }, 800);
+            };
+
+            // 角色中文显示
+            const getRoleName = (role) => {
+                const map = {
+                    employee: '普通员工',
+                    manager: '管理人员',
+                    admin: '超级用户',
+                    visitor: '访客'
+                };
+                return map[role] || role;
+            };
+
+            return {
+                form,
+                loading,
+                message,
+                handleLogin,
+                getRoleName
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
