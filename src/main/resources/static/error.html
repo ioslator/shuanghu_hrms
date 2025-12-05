@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错误页面 - 双虎HRMS系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .error-container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        .error-icon {
+            font-size: 80px;
+            color: #ff6b6b;
+            margin-bottom: 20px;
+        }
+        
+        .error-title {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .error-message {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        
+        .error-details {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #495057;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #667eea;
+            color: #667eea;
+        }
+        
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .contact-info {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 480px) {
+            .error-container {
+                padding: 30px 20px;
+            }
+            
+            .error-title {
+                font-size: 24px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <h1 class="error-title" id="errorTitle">系统错误</h1>
+        <p class="error-message" id="errorMessage">抱歉，系统遇到了一个错误。请稍后重试或联系系统管理员。</p>
+        
+        <div class="error-details" id="errorDetails" style="display: none;">
+            <strong>错误详情：</strong><br>
+            <span id="errorInfo"></span>
+        </div>
+        
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="window.location.reload()">刷新页面</button>
+            <button class="btn btn-secondary" onclick="window.history.back()">返回上页</button>
+            <button class="btn btn-outline" onclick="toggleDetails()">显示/隐藏详情</button>
+            <a href="/static/dept_manage_final_fixed.html" class="btn btn-outline">返回首页</a>
+        </div>
+        
+        <div class="contact-info">
+            <strong>技术支持：</strong><br>
+            电话：400-123-4567 | 邮箱：support@shuanghu.com<br>
+            工作时间：周一至周五 9:00-18:00
+        </div>
+    </div>
+
+    <script>
+        // 从URL参数中获取错误信息
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                status: params.get('status') || '500',
+                message: params.get('message') || '系统内部错误',
+                path: params.get('path') || window.location.pathname,
+                timestamp: params.get('timestamp') || new Date().getTime()
+            };
+        }
+        
+        // 根据错误状态码设置不同的标题和消息
+        function setErrorContent() {
+            const params = getUrlParams();
+            const status = parseInt(params.status);
+            
+            const titleMap = {
+                400: '请求参数错误',
+                404: '页面未找到',
+                500: '服务器内部错误',
+                503: '服务不可用'
+            };
+            
+            const messageMap = {
+                400: '您提交的请求参数有误，请检查后重试。',
+                404: '您访问的页面不存在，请检查URL是否正确。',
+                500: '服务器遇到了一个内部错误，请稍后重试。',
+                503: '服务暂时不可用，请稍后再试。'
+            };
+            
+            document.getElementById('errorTitle').textContent = titleMap[status] || '系统错误';
+            document.getElementById('errorMessage').textContent = messageMap[status] || '抱歉，系统遇到了一个错误。';
+            
+            // 设置错误详情
+            const errorInfo = `
+                错误代码: ${params.status}\n
+                错误信息: ${params.message}\n
+                请求路径: ${params.path}\n
+                发生时间: ${new Date(parseInt(params.timestamp)).toLocaleString()}
+            `;
+            document.getElementById('errorInfo').textContent = errorInfo;
+        }
+        
+        // 切换错误详情显示
+        function toggleDetails() {
+            const details = document.getElementById('errorDetails');
+            details.style.display = details.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            setErrorContent();
+            
+            // 如果是开发环境，默认显示错误详情
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                document.getElementById('errorDetails').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

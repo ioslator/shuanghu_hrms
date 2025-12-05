@@ -23,6 +23,12 @@
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- Spring Boot 核心 Web（包含 Tomcat 嵌入式服务器） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

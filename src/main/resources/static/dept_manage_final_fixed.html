@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>双慧人力资源管理系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .sidebar {
+            height: 100vh;
+            background-color: #343a40;
+            color: white;
+            position: fixed;
+            padding-top: 20px;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        .nav-link {
+            color: rgba(255,255,255,.5);
+        }
+        .nav-link:hover, .nav-link.active {
+            color: white;
+        }
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+            border: 1px solid rgba(0,0,0,.125);
+        }
+        .module-title {
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .table th {
+            border-top: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid" id="app">
+        <div class="row">
+            <!-- 侧边栏 -->
+            <nav class="col-md-2 d-none d-md-block sidebar">
+                <div class="sidebar-sticky">
+                    <h4 class="text-center mb-4">HR管理系统</h4>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" :class="{active: currentModule === 'dashboard'}" @click="switchModule('dashboard')">
+                                <i class="fas fa-tachometer-alt"></i> 控制面板
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" :class="{active: currentModule === 'employees'}" @click="switchModule('employees')">
+                                <i class="fas fa-users"></i> 员工管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" :class="{active: currentModule === 'attendance'}" @click="switchModule('attendance')">
+                                <i class="fas fa-clock"></i> 考勤管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" :class="{active: currentModule === 'departments'}" @click="switchModule('departments')">
+                                <i class="fas fa-building"></i> 部门管理
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- 主要内容区域 -->
+            <main role="main" class="col-md-10 ml-sm-auto main-content">
+                <!-- 控制面板 -->
+                <div v-if="currentModule === 'dashboard'" class="dashboard-module">
+                    <h2 class="module-title">控制面板</h2>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <h5 class="card-title">总员工数</h5>
+                                    <p class="card-text display-4">{{ employees.length }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h5 class="card-title">今日出勤</h5>
+                                    <p class="card-text display-4">{{ todayAttendanceCount }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <h5 class="card-title">部门数量</h5>
+                                    <p class="card-text display-4">{{ departments.length }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>最近员工</h5>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group">
+                                        <li v-for="employee in recentEmployees" :key="employee.id" class="list-group-item">
+                                            {{ employee.name }} - {{ employee.position }}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>部门分布</h5>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group">
+                                        <li v-for="dept in departments" :key="dept.id" class="list-group-item d-flex justify-content-between align-items-center">
+                                            {{ dept.name }}
+                                            <span class="badge badge-primary badge-pill">{{ dept.employeeCount }}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 员工管理模块 -->
+                <div v-if="currentModule === 'employees'" class="employees-module">
+                    <h2 class="module-title">员工管理</h2>
+                    
+                    <!-- 搜索和添加按钮 -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" placeholder="搜索员工..." v-model="employeeSearch">
+                        </div>
+                        <div class="col-md-6 text-right">
+                            <button class="btn btn-primary" @click="showEmployeeModal()">
+                                <i class="fas fa-plus"></i> 添加员工
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 员工表格 -->
+                    <div class="card">
+                        <div class="card-body">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>姓名</th>
+                                        <th>职位</th>
+                                        <th>部门</th>
+                                        <th>入职日期</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="employee in filteredEmployees" :key="employee.id">
+                                        <td>{{ employee.id }}</td>
+                                        <td>{{ employee.name }}</td>
+                                        <td>{{ employee.position }}</td>
+                                        <td>{{ employee.department }}</td>
+                                        <td>{{ employee.hireDate }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary mr-1" @click="editEmployee(employee)">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" @click="deleteEmployee(employee.id)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 考勤管理模块 -->
+                <div v-if="currentModule === 'attendance'" class="attendance-module">
+                    <h2 class="module-title">考勤管理</h2>
+                    
+                    <!-- 添加考勤记录按钮 -->
+                    <div class="row mb-3">
+                        <div class="col-md-12 text-right">
+                            <button class="btn btn-primary" @click="showAttendanceModal()">
+                                <i class="fas fa-plus"></i> 添加考勤记录
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 考勤表格 -->
+                    <div class="card">
+                        <div class="card-body">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>员工ID</th>
+                                        <th>员工姓名</th>
+                                        <th>日期</th>
+                                        <th>上班时间</th>
+                                        <th>下班时间</th>
+                                        <th>状态</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="attendance in attendances" :key="attendance.id">
+                                        <td>{{ attendance.id }}</td>
+                                        <td>{{ attendance.employeeId }}</td>
+                                        <td>{{ attendance.employeeName }}</td>
+                                        <td>{{ attendance.date }}</td>
+                                        <td>{{ attendance.checkIn }}</td>
+                                        <td>{{ attendance.checkOut }}</td>
+                                        <td>
+                                            <span :class="{
+                                                'badge': true,
+                                                'badge-success': attendance.status === '正常',
+                                                'badge-warning': attendance.status === '迟到',
+                                                'badge-danger': attendance.status === '缺勤'
+                                            }">{{ attendance.status }}</span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary mr-1" @click="editAttendance(attendance)">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" @click="deleteAttendance(attendance.id)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 部门管理模块 -->
+                <div v-if="currentModule === 'departments'" class="departments-module">
+                    <h2 class="module-title">部门管理</h2>
+                    
+                    <!-- 添加部门按钮 -->
+                    <div class="row mb-3">
+                        <div class="col-md-12 text-right">
+                            <button class="btn btn-primary" @click="showDepartmentModal()">
+                                <i class="fas fa-plus"></i> 添加部门
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 部门表格 -->
+                    <div class="card">
+                        <div class="card-body">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>部门名称</th>
+                                        <th>描述</th>
+                                        <th>员工数量</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="department in departments" :key="department.id">
+                                        <td>{{ department.id }}</td>
+                                        <td>{{ department.name }}</td>
+                                        <td>{{ department.description }}</td>
+                                        <td>{{ department.employeeCount }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary mr-1" @click="editDepartment(department)">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" @click="deleteDepartment(department.id)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- 员工模态框 -->
+        <div class="modal" :class="{show: employeeModalShow}" tabindex="-1" role="dialog" style="display: block;" v-if="employeeModalShow">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ employeeForm.id ? '编辑员工' : '添加员工' }}</h5>
+                        <button type="button" class="close" @click="hideEmployeeModal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="form-group">
+                                <label>姓名</label>
+                                <input type="text" class="form-control" v-model="employeeForm.name">
+                            </div>
+                            <div class="form-group">
+                                <label>职位</label>
+                                <input type="text" class="form-control" v-model="employeeForm.position">
+                            </div>
+                            <div class="form-group">
+                                <label>部门</label>
+                                <select class="form-control" v-model="employeeForm.department">
+                                    <option v-for="dept in departments" :key="dept.id" :value="dept.name">{{ dept.name }}</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>入职日期</label>
+                                <input type="date" class="form-control" v-model="employeeForm.hireDate">
+                            </div>
+                        </form>
+                        <div class="alert alert-danger" v-if="employeeAlertShow">
+                            请填写所有必填字段！
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="hideEmployeeModal">取消</button>
+                        <button type="button" class="btn btn-primary" @click="saveEmployee">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 考勤记录模态框 -->
+        <div class="modal" :class="{show: attendanceModalShow}" tabindex="-1" role="dialog" style="display: block;" v-if="attendanceModalShow">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ attendanceForm.id ? '编辑考勤记录' : '添加考勤记录' }}</h5>
+                        <button type="button" class="close" @click="hideAttendanceModal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="form-group">
+                                <label>员工</label>
+                                <select class="form-control" v-model="attendanceForm.employeeId">
+                                    <option v-for="emp in employees" :key="emp.id" :value="emp.id">{{ emp.name }}</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>日期</label>
+                                <input type="date" class="form-control" v-model="attendanceForm.date">
+                            </div>
+                            <div class="form-group">
+                                <label>上班时间</label>
+                                <input type="time" class="form-control" v-model="attendanceForm.checkIn">
+                            </div>
+                            <div class="form-group">
+                                <label>下班时间</label>
+                                <input type="time" class="form-control" v-model="attendanceForm.checkOut">
+                            </div>
+                        </form>
+                        <div class="alert alert-danger" v-if="attendanceAlertShow">
+                            请填写所有必填字段！
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="hideAttendanceModal">取消</button>
+                        <button type="button" class="btn btn-primary" @click="saveAttendance">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 部门模态框 -->
+        <div class="modal" :class="{show: departmentModalShow}" tabindex="-1" role="dialog" style="display: block;" v-if="departmentModalShow">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ departmentForm.id ? '编辑部门' : '添加部门' }}</h5>
+                        <button type="button" class="close" @click="hideDepartmentModal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="form-group">
+                                <label>部门名称</label>
+                                <input type="text" class="form-control" v-model="departmentForm.name">
+                            </div>
+                            <div class="form-group">
+                                <label>描述</label>
+                                <textarea class="form-control" v-model="departmentForm.description"></textarea>
+                            </div>
+                        </form>
+                        <div class="alert alert-danger" v-if="departmentAlertShow">
+                            请填写所有必填字段！
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="hideDepartmentModal">取消</button>
+                        <button type="button" class="btn btn-primary" @click="saveDepartment">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入Vue.js和Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    
+    <script>
+        // 备用Vue加载脚本
+        if (typeof Vue === 'undefined') {
+            document.write('<script src="js/vue.min.js"><\/script>');
+        }
+
+        // 创建Vue实例
+        new Vue({
+            el: "#app",
+            data: {
+                currentModule: 'dashboard',
+                // 员工管理数据
+                employees: [
+                    { id: 1, name: "张三", position: "软件工程师", department: "技术部", hireDate: "2020-01-15" },
+                    { id: 2, name: "李四", position: "产品经理", department: "产品部", hireDate: "2019-03-22" },
+                    { id: 3, name: "王五", position: "设计师", department: "设计部", hireDate: "2021-07-10" }
+                ],
+                employeeSearch: '',
+                employeeForm: {
+                    id: null,
+                    name: '',
+                    position: '',
+                    department: '',
+                    hireDate: ''
+                },
+                employeeModalShow: false,
+                employeeAlertShow: false,
+                
+                // 考勤管理数据
+                attendances: [
+                    { id: 1, employeeId: 1, employeeName: "张三", date: "2023-05-01", checkIn: "09:00", checkOut: "18:00", status: "正常" },
+                    { id: 2, employeeId: 2, employeeName: "李四", date: "2023-05-01", checkIn: "09:15", checkOut: "18:30", status: "迟到" }
+                ],
+                attendanceForm: {
+                    id: null,
+                    employeeId: '',
+                    date: '',
+                    checkIn: '',
+                    checkOut: ''
+                },
+                attendanceModalShow: false,
+                attendanceAlertShow: false,
+                
+                // 部门管理数据
+                departments: [
+                    { id: 1, name: "技术部", description: "负责产品研发和技术支持", employeeCount: 15 },
+                    { id: 2, name: "产品部", description: "负责产品规划和管理", employeeCount: 8 },
+                    { id: 3, name: "设计部", description: "负责用户体验和界面设计", employeeCount: 5 }
+                ],
+                departmentForm: {
+                    id: null,
+                    name: '',
+                    description: ''
+                },
+                departmentModalShow: false,
+                departmentAlertShow: false
+            },
+            computed: {
+                filteredEmployees() {
+                    if (!this.employeeSearch) {
+                        return this.employees;
+                    }
+                    const search = this.employeeSearch.toLowerCase();
+                    return this.employees.filter(emp => 
+                        emp.name.toLowerCase().includes(search) || 
+                        emp.position.toLowerCase().includes(search) ||
+                        emp.department.toLowerCase().includes(search)
+                    );
+                },
+                todayAttendanceCount() {
+                    const today = new Date().toISOString().split('T')[0];
+                    return this.attendances.filter(att => att.date === today && att.status === '正常').length;
+                },
+                recentEmployees() {
+                    return this.employees.slice(0, 5);
+                }
+            },
+            methods: {
+                switchModule(module) {
+                    this.currentModule = module;
+                },
+                
+                // 员工管理方法
+                showEmployeeModal(employee) {
+                    if (employee) {
+                        this.employeeForm = { ...employee };
+                    } else {
+                        this.employeeForm = {
+                            id: null,
+                            name: '',
+                            position: '',
+                            department: '',
+                            hireDate: ''
+                        };
+                    }
+                    this.employeeModalShow = true;
+                    this.employeeAlertShow = false;
+                },
+                hideEmployeeModal() {
+                    this.employeeModalShow = false;
+                    this.employeeAlertShow = false;
+                },
+                saveEmployee() {
+                    if (!this.employeeForm.name || !this.employeeForm.position || !this.employeeForm.department || !this.employeeForm.hireDate) {
+                        this.employeeAlertShow = true;
+                        return;
+                    }
+                    
+                    if (this.employeeForm.id) {
+                        // 编辑员工
+                        const index = this.employees.findIndex(e => e.id === this.employeeForm.id);
+                        if (index !== -1) {
+                            this.employees.splice(index, 1, { ...this.employeeForm });
+                        }
+                    } else {
+                        // 添加员工
+                        const newId = this.employees.length > 0 ? Math.max(...this.employees.map(e => e.id)) + 1 : 1;
+                        this.employees.push({
+                            id: newId,
+                            ...this.employeeForm
+                        });
+                    }
+                    
+                    this.hideEmployeeModal();
+                },
+                editEmployee(employee) {
+                    this.showEmployeeModal(employee);
+                },
+                deleteEmployee(id) {
+                    if (confirm('确定要删除这个员工吗？')) {
+                        this.employees = this.employees.filter(e => e.id !== id);
+                    }
+                },
+                
+                // 考勤管理方法
+                showAttendanceModal(attendance) {
+                    if (attendance) {
+                        this.attendanceForm = { ...attendance };
+                    } else {
+                        this.attendanceForm = {
+                            id: null,
+                            employeeId: '',
+                            date: '',
+                            checkIn: '',
+                            checkOut: ''
+                        };
+                    }
+                    this.attendanceModalShow = true;
+                    this.attendanceAlertShow = false;
+                },
+                hideAttendanceModal() {
+                    this.attendanceModalShow = false;
+                    this.attendanceAlertShow = false;
+                },
+                saveAttendance() {
+                    if (!this.attendanceForm.employeeId || !this.attendanceForm.date || !this.attendanceForm.checkIn || !this.attendanceForm.checkOut) {
+                        this.attendanceAlertShow = true;
+                        return;
+                    }
+                    
+                    // 获取员工姓名
+                    const employee = this.employees.find(e => e.id === this.attendanceForm.employeeId);
+                    const employeeName = employee ? employee.name : '';
+                    
+                    // 简单的状态判断
+                    const checkInTime = parseInt(this.attendanceForm.checkIn.replace(':', ''));
+                    const status = checkInTime > 900 ? '迟到' : '正常';
+                    
+                    if (this.attendanceForm.id) {
+                        // 编辑考勤记录
+                        const index = this.attendances.findIndex(a => a.id === this.attendanceForm.id);
+                        if (index !== -1) {
+                            this.attendances.splice(index, 1, { 
+                                ...this.attendanceForm,
+                                employeeName,
+                                status
+                            });
+                        }
+                    } else {
+                        // 添加考勤记录
+                        const newId = this.attendances.length > 0 ? Math.max(...this.attendances.map(a => a.id)) + 1 : 1;
+                        this.attendances.push({
+                            id: newId,
+                            ...this.attendanceForm,
+                            employeeName,
+                            status
+                        });
+                    }
+                    
+                    this.hideAttendanceModal();
+                },
+                editAttendance(attendance) {
+                    this.showAttendanceModal(attendance);
+                },
+                deleteAttendance(id) {
+                    if (confirm('确定要删除这条考勤记录吗？')) {
+                        this.attendances = this.attendances.filter(a => a.id !== id);
+                    }
+                },
+                
+                // 部门管理方法
+                showDepartmentModal(department) {
+                    if (department) {
+                        this.departmentForm = { ...department };
+                    } else {
+                        this.departmentForm = {
+                            id: null,
+                            name: '',
+                            description: ''
+                        };
+                    }
+                    this.departmentModalShow = true;
+                    this.departmentAlertShow = false;
+                },
+                hideDepartmentModal() {
+                    this.departmentModalShow = false;
+                    this.departmentAlertShow = false;
+                },
+                saveDepartment() {
+                    if (!this.departmentForm.name) {
+                        this.departmentAlertShow = true;
+                        return;
+                    }
+                    
+                    if (this.departmentForm.id) {
+                        // 编辑部门
+                        const index = this.departments.findIndex(d => d.id === this.departmentForm.id);
+                        if (index !== -1) {
+                            this.departments.splice(index, 1, { ...this.departmentForm });
+                        }
+                    } else {
+                        // 添加部门
+                        const newId = this.departments.length > 0 ? Math.max(...this.departments.map(d => d.id)) + 1 : 1;
+                        this.departments.push({
+                            id: newId,
+                            ...this.departmentForm,
+                            employeeCount: 0
+                        });
+                    }
+                    
+                    this.hideDepartmentModal();
+                },
+                editDepartment(department) {
+                    this.showDepartmentModal(department);
+                },
+                deleteDepartment(id) {
+                    if (confirm('确定要删除这个部门吗？')) {
+                        this.departments = this.departments.filter(d => d.id !== id);
+                    }
+                },
+                
+                // 数据加载方法
+                loadEmployees() {
+                    // 在实际应用中，这里会从服务器加载数据
+                    console.log('Loading employees...');
+                },
+                loadAttendances() {
+                    // 在实际应用中，这里会从服务器加载数据
+                    console.log('Loading attendances...');
+                },
+                loadDepartments() {
+                    // 在实际应用中，这里会从服务器加载数据
+                    console.log('Loading departments...');
+                }
+            },
+            mounted() {
+                // 初始化加载数据
+                this.loadEmployees();
+                this.loadAttendances();
+                this.loadDepartments();
+            }
+        });
+    </script>
+</body>
+</html>
