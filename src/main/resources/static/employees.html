@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>员工管理 - 双虎人力资源管理系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+            border: 1px solid rgba(0,0,0,.125);
+        }
+        .module-title {
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .table th {
+            border-top: none;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="employees-module">
+            <h2 class="module-title">员工管理</h2>
+            
+            <!-- 搜索和添加按钮 -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" placeholder="搜索员工..." id="employeeSearch">
+                </div>
+                <div class="col-md-6 text-right">
+                    <button class="btn btn-primary" id="addEmployeeBtn">
+                        <i class="fas fa-plus"></i> 添加员工
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 员工表格 -->
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>姓名</th>
+                                <th>职位</th>
+                                <th>部门</th>
+                                <th>入职日期</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>张三</td>
+                                <td>软件工程师</td>
+                                <td>技术部</td>
+                                <td>2023-01-15</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary mr-1 edit-employee" data-id="1">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-employee" data-id="1">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>李四</td>
+                                <td>产品经理</td>
+                                <td>产品部</td>
+                                <td>2022-11-20</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary mr-1 edit-employee" data-id="2">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-employee" data-id="2">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 员工模态框 -->
+        <div class="modal" id="employeeModal" tabindex="-1" role="dialog" style="display: none;">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="employeeModalTitle">添加员工</h5>
+                        <button type="button" class="close" id="closeEmployeeModal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="employeeForm">
+                            <input type="hidden" id="employeeId">
+                            <div class="form-group">
+                                <label>姓名</label>
+                                <input type="text" class="form-control" id="employeeName" required>
+                            </div>
+                            <div class="form-group">
+                                <label>职位</label>
+                                <input type="text" class="form-control" id="employeePosition" required>
+                            </div>
+                            <div class="form-group">
+                                <label>部门</label>
+                                <select class="form-control" id="employeeDepartment" required>
+                                    <option value="">请选择部门</option>
+                                    <option value="技术部" selected>技术部</option>
+                                    <option value="产品部">产品部</option>
+                                    <option value="设计部">设计部</option>
+                                    <option value="市场部">市场部</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>入职日期</label>
+                                <input type="date" class="form-control" id="employeeHireDate" required>
+                            </div>
+                        </form>
+                        <div class="alert alert-danger hidden" id="employeeAlert">
+                            请填写所有必填字段！
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancelEmployeeBtn">取消</button>
+                        <button type="button" class="btn btn-primary" id="saveEmployeeBtn">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 显示员工模态框
+        document.getElementById('addEmployeeBtn').addEventListener('click', function() {
+            // 清空表单
+            document.getElementById('employeeForm').reset();
+            document.getElementById('employeeId').value = '';
+            document.getElementById('employeeModalTitle').textContent = '添加员工';
+            document.getElementById('employeeAlert').classList.add('hidden');
+            document.getElementById('employeeModal').style.display = 'block';
+        });
+        
+        // 编辑员工
+        document.querySelectorAll('.edit-employee').forEach(function(button) {
+            button.addEventListener('click', function() {
+                // 这里应该从数据源获取员工信息，这里简化处理
+                document.getElementById('employeeId').value = this.getAttribute('data-id');
+                document.getElementById('employeeModalTitle').textContent = '编辑员工';
+                document.getElementById('employeeAlert').classList.add('hidden');
+                document.getElementById('employeeModal').style.display = 'block';
+            });
+        });
+        
+        // 删除员工
+        document.querySelectorAll('.delete-employee').forEach(function(button) {
+            button.addEventListener('click', function() {
+                if (confirm('确定要删除这名员工吗？')) {
+                    // 这里应该调用删除API，这里简化处理
+                    alert('员工已删除');
+                }
+            });
+        });
+        
+        // 关闭员工模态框
+        document.getElementById('closeEmployeeModal').addEventListener('click', function() {
+            document.getElementById('employeeModal').style.display = 'none';
+        });
+        
+        document.getElementById('cancelEmployeeBtn').addEventListener('click', function() {
+            document.getElementById('employeeModal').style.display = 'none';
+        });
+        
+        // 保存员工
+        document.getElementById('saveEmployeeBtn').addEventListener('click', function() {
+            // 获取表单值
+            var name = document.getElementById('employeeName').value.trim();
+            var position = document.getElementById('employeePosition').value.trim();
+            var department = document.getElementById('employeeDepartment').value;
+            var hireDate = document.getElementById('employeeHireDate').value;
+            
+            // 验证必填字段
+            if (!name || !position || !department || !hireDate) {
+                document.getElementById('employeeAlert').classList.remove('hidden');
+                return;
+            }
+            
+            // 这里应该调用保存API，这里简化处理
+            document.getElementById('employeeAlert').classList.add('hidden');
+            document.getElementById('employeeModal').style.display = 'none';
+            alert('员工信息已保存');
+        });
+    </script>
+</body>
+</html>

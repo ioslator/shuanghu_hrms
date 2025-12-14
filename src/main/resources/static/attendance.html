@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>考勤管理 - 双虎人力资源管理系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+            border: 1px solid rgba(0,0,0,.125);
+        }
+        .module-title {
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .table th {
+            border-top: none;
+        }
+        .badge-success {
+            background-color: #28a745;
+        }
+        .badge-warning {
+            background-color: #ffc107;
+        }
+        .badge-danger {
+            background-color: #dc3545;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="attendance-module">
+            <h2 class="module-title">考勤管理</h2>
+            
+            <!-- 添加考勤记录按钮 -->
+            <div class="row mb-3">
+                <div class="col-md-12 text-right">
+                    <button class="btn btn-primary" id="addAttendanceBtn">
+                        <i class="fas fa-plus"></i> 添加考勤记录
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 考勤表格 -->
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>员工ID</th>
+                                <th>员工姓名</th>
+                                <th>日期</th>
+                                <th>上班时间</th>
+                                <th>下班时间</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>1</td>
+                                <td>张三</td>
+                                <td>2023-06-01</td>
+                                <td>09:00</td>
+                                <td>18:00</td>
+                                <td>
+                                    <span class="badge badge-success">正常</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary mr-1 edit-attendance" data-id="1">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-attendance" data-id="1">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>2</td>
+                                <td>李四</td>
+                                <td>2023-06-01</td>
+                                <td>09:15</td>
+                                <td>18:30</td>
+                                <td>
+                                    <span class="badge badge-warning">迟到</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary mr-1 edit-attendance" data-id="2">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-attendance" data-id="2">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 考勤记录模态框 -->
+        <div class="modal" id="attendanceModal" tabindex="-1" role="dialog" style="display: none;">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="attendanceModalTitle">添加考勤记录</h5>
+                        <button type="button" class="close" id="closeAttendanceModal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="attendanceForm">
+                            <input type="hidden" id="attendanceId">
+                            <div class="form-group">
+                                <label>员工</label>
+                                <select class="form-control" id="attendanceEmployeeId" required>
+                                    <option value="">请选择员工</option>
+                                    <option value="1" selected>张三</option>
+                                    <option value="2">李四</option>
+                                    <option value="3">王五</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>日期</label>
+                                <input type="date" class="form-control" id="attendanceDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label>上班时间</label>
+                                <input type="time" class="form-control" id="attendanceCheckIn" required>
+                            </div>
+                            <div class="form-group">
+                                <label>下班时间</label>
+                                <input type="time" class="form-control" id="attendanceCheckOut" required>
+                            </div>
+                        </form>
+                        <div class="alert alert-danger hidden" id="attendanceAlert">
+                            请填写所有必填字段！
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancelAttendanceBtn">取消</button>
+                        <button type="button" class="btn btn-primary" id="saveAttendanceBtn">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 显示考勤模态框
+        document.getElementById('addAttendanceBtn').addEventListener('click', function() {
+            // 清空表单
+            document.getElementById('attendanceForm').reset();
+            document.getElementById('attendanceId').value = '';
+            document.getElementById('attendanceModalTitle').textContent = '添加考勤记录';
+            document.getElementById('attendanceAlert').classList.add('hidden');
+            document.getElementById('attendanceModal').style.display = 'block';
+        });
+        
+        // 编辑考勤记录
+        document.querySelectorAll('.edit-attendance').forEach(function(button) {
+            button.addEventListener('click', function() {
+                // 这里应该从数据源获取考勤信息，这里简化处理
+                document.getElementById('attendanceId').value = this.getAttribute('data-id');
+                document.getElementById('attendanceModalTitle').textContent = '编辑考勤记录';
+                document.getElementById('attendanceAlert').classList.add('hidden');
+                document.getElementById('attendanceModal').style.display = 'block';
+            });
+        });
+        
+        // 删除考勤记录
+        document.querySelectorAll('.delete-attendance').forEach(function(button) {
+            button.addEventListener('click', function() {
+                if (confirm('确定要删除这条考勤记录吗？')) {
+                    // 这里应该调用删除API，这里简化处理
+                    alert('考勤记录已删除');
+                }
+            });
+        });
+        
+        // 关闭考勤模态框
+        document.getElementById('closeAttendanceModal').addEventListener('click', function() {
+            document.getElementById('attendanceModal').style.display = 'none';
+        });
+        
+        document.getElementById('cancelAttendanceBtn').addEventListener('click', function() {
+            document.getElementById('attendanceModal').style.display = 'none';
+        });
+        
+        // 保存考勤记录
+        document.getElementById('saveAttendanceBtn').addEventListener('click', function() {
+            // 获取表单值
+            var employeeId = document.getElementById('attendanceEmployeeId').value;
+            var date = document.getElementById('attendanceDate').value;
+            var checkIn = document.getElementById('attendanceCheckIn').value;
+            var checkOut = document.getElementById('attendanceCheckOut').value;
+            
+            // 验证必填字段
+            if (!employeeId || !date || !checkIn || !checkOut) {
+                document.getElementById('attendanceAlert').classList.remove('hidden');
+                return;
+            }
+            
+            // 这里应该调用保存API，这里简化处理
+            document.getElementById('attendanceAlert').classList.add('hidden');
+            document.getElementById('attendanceModal').style.display = 'none';
+            alert('考勤记录已保存');
+        });
+    </script>
+</body>
+</html>
