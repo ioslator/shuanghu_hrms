@@ -10,129 +10,141 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.Types; // 导入 Types，用于设置 NULL
+import java.sql.ResultSet;
+import java.sql.Types;
+import java.util.regex.Pattern;
 
 @WebServlet(urlPatterns = {"/api/employee/add", "/api/employee/update", "/api/employee/delete"})
 public class EmployeeManageServlet extends HttpServlet {
 
+    // 预定义正则表达式
+    private static final String PHONE_REGEX = "^1[3-9]\\d{9}$"; // 中国大陆手机号
+    private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"; // 简单邮箱
+    private static final String ID_CARD_REGEX = "(^\\d{15}$)|(^\\d{18}$)|(^\\d{17}(\\d|X|x)$)"; // 身份证
+
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        // 设置编码，防止中文乱码
         req.setCharacterEncoding("UTF-8");
         resp.setContentType("application/json;charset=utf-8");
 
         String uri = req.getRequestURI();
         JSONObject result = new JSONObject();
 
-        // 路由判断
         if (uri.endsWith("/add")) {
             addEmployee(req, result);
-        } else if (uri.endsWith("/update")) {
-            // 这里可以放更新逻辑
+        } else {
             result.put("success", false);
-            result.put("message", "更新接口待实现");
-        } else if (uri.endsWith("/delete")) {
-            // 这里可以放删除逻辑
-            result.put("success", false);
-            result.put("message", "删除接口待实现");
+            result.put("message", "接口功能未实现");
         }
 
         resp.getWriter().write(result.toJSONString());
     }
 
-    // 核心：添加员工逻辑
     private void addEmployee(HttpServletRequest req, JSONObject result) {
-        // 1. 获取参数 (前端 form 表单的 name 属性)
+        // 1. 获取所有参数
         String name = req.getParameter("emp_name");
         String no = req.getParameter("emp_no");
         String gender = req.getParameter("gender");
         String deptIdStr = req.getParameter("dept_id");
         String titleIdStr = req.getParameter("title_id");
         String hireDate = req.getParameter("hire_date");
-
-        // 选填项
-        String birthDate = req.getParameter("birth_date");
-        String idCard = req.getParameter("id_card");
-        String education = req.getParameter("education");
         String phone = req.getParameter("emp_phone");
         String email = req.getParameter("emp_email");
+        String idCard = req.getParameter("id_card");
+        String birthDate = req.getParameter("birth_date");
+        String education = req.getParameter("education");
         String address = req.getParameter("emp_address");
 
-        // 2. 必填项校验 (后端二次校验，防止非法请求)
-        if (name == null || name.isEmpty() || no == null || no.isEmpty() ||
-                deptIdStr == null || titleIdStr == null || hireDate == null) {
+        // 2.【后端核心校验】开始
+
+        // (1) 必填项非空校验
+        if (isEmpty(name) || isEmpty(no) || isEmpty(gender) || isEmpty(hireDate) ||
+                isEmpty(deptIdStr) || isEmpty(titleIdStr)) {
             result.put("success", false);
-            result.put("message", "必填字段不能为空！");
+            result.put("message", "提交失败：所有带 * 的必填项都不能为空！");
             return;
         }
 
-        // 3. 构造 SQL
-        // 注意：数据库字段名请根据您实际数据库调整，这里参考了 Employee.java
-        String sql = "INSERT INTO employee " +
-                "(emp_name, emp_no, gender, dept_id, title_id, hire_date, " + // 必填列
-                "birth_date, id_card, education, emp_phone, emp_email, emp_address, " + // 选填列
-                "emp_status, create_time) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())"; // status 默认 1 (在职), create_time 默认当前时间
+        // (2) 格式校验 (即便前端没填，如果有值就必须符合格式)
+        if (!isEmpty(phone) && !Pattern.matches(PHONE_REGEX, phone)) {
+            result.put("success", false);
+            result.put("message", "提交失败：手机号码格式不正确！");
+            return;
+        }
+        if (!isEmpty(email) && !Pattern.matches(EMAIL_REGEX, email)) {
+            result.put("success", false);
+            result.put("message", "提交失败：电子邮箱格式不正确！");
+            return;
+        }
+        if (!isEmpty(idCard) && !Pattern.matches(ID_CARD_REGEX, idCard)) {
+            result.put("success", false);
+            result.put("message", "提交失败：身份证号格式不正确！");
+            return;
+        }
 
-        try (Connection conn = JdbcUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        // 3. 数据库操作
+        try (Connection conn = JdbcUtil.getConnection()) {
 
-            // --- 设置必填参数 ---
-            ps.setString(1, name);
-            ps.setString(2, no);
-            ps.setString(3, gender);
-            ps.setInt(4, Integer.parseInt(deptIdStr));
-            ps.setInt(5, Integer.parseInt(titleIdStr));
-            ps.setString(6, hireDate); // 格式通常为 yyyy-MM-dd
-
-            // --- 设置选填参数 (核心逻辑：如果是空字符串，则设为 NULL) ---
-
-            // 7. birth_date (日期类型比较特殊，如果为空设为 NULL)
-            if (birthDate == null || birthDate.trim().isEmpty()) {
-                ps.setNull(7, Types.DATE);
-            } else {
-                ps.setString(7, birthDate);
+            // (3) 业务逻辑校验：检查工号是否已存在
+            String checkSql = "SELECT count(*) FROM employee WHERE emp_no = ? AND emp_status = 1";
+            try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
+                checkPs.setString(1, no);
+                ResultSet rs = checkPs.executeQuery();
+                if (rs.next() && rs.getInt(1) > 0) {
+                    result.put("success", false);
+                    result.put("message", "提交失败：工号 " + no + " 已存在，请更换！");
+                    return;
+                }
             }
 
-            // 8. id_card
-            setOptionalString(ps, 8, idCard);
+            // (4) 执行插入
+            String sql = "INSERT INTO employee (emp_name, emp_no, gender, dept_id, title_id, hire_date, " +
+                    "emp_phone, emp_email, id_card, birth_date, education, emp_address, emp_status, create_time) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())";
 
-            // 9. education
-            setOptionalString(ps, 9, education);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, name);
+                ps.setString(2, no);
+                ps.setString(3, gender);
+                ps.setInt(4, Integer.parseInt(deptIdStr));
+                ps.setInt(5, Integer.parseInt(titleIdStr));
+                ps.setString(6, hireDate);
 
-            // 10. emp_phone
-            setOptionalString(ps, 10, phone);
+                // 处理选填项 (空字符串转NULL)
+                setOptionalString(ps, 7, phone);
+                setOptionalString(ps, 8, email);
+                setOptionalString(ps, 9, idCard);
+                // 日期特殊处理
+                if (isEmpty(birthDate)) ps.setNull(10, Types.DATE);
+                else ps.setString(10, birthDate);
 
-            // 11. emp_email
-            setOptionalString(ps, 11, email);
+                setOptionalString(ps, 11, education);
+                setOptionalString(ps, 12, address);
 
-            // 12. emp_address
-            setOptionalString(ps, 12, address);
-
-            // 4. 执行插入
-            int rows = ps.executeUpdate();
-            if (rows > 0) {
-                result.put("success", true);
-                result.put("message", "员工添加成功");
-            } else {
-                result.put("success", false);
-                result.put("message", "数据库插入失败");
+                int rows = ps.executeUpdate();
+                result.put("success", rows > 0);
+                result.put("message", rows > 0 ? "员工录入成功" : "数据库插入失败");
             }
 
         } catch (NumberFormatException e) {
             result.put("success", false);
-            result.put("message", "部门ID或职位ID无效");
+            result.put("message", "数据异常：部门或职位ID必须为数字");
         } catch (Exception e) {
             e.printStackTrace();
             result.put("success", false);
-            result.put("message", "系统错误: " + e.getMessage());
+            result.put("message", "系统内部错误: " + e.getMessage());
         }
     }
 
-    // 辅助工具方法：处理可选的字符串参数
+    // 工具方法：判断字符串是否为空
+    private boolean isEmpty(String str) {
+        return str == null || str.trim().isEmpty();
+    }
+
+    // 工具方法：处理可选字段
     private void setOptionalString(PreparedStatement ps, int index, String value) throws java.sql.SQLException {
-        if (value == null || value.trim().isEmpty()) {
-            ps.setNull(index, Types.VARCHAR); // 如果为空，插入 DB NULL
+        if (isEmpty(value)) {
+            ps.setNull(index, Types.VARCHAR);
         } else {
             ps.setString(index, value.trim());
         }

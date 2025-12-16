@@ -4,31 +4,174 @@
     <meta charset="UTF-8">
     <title>数据导入导出</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
-    <style>body{padding:20px;background:#f8f9fa;}</style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body { background-color: #f8f9fa; padding: 20px; }
+
+        .card {
+            border: none;
+            border-radius: 8px; /*稍微减小圆角，更硬朗一点*/
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+            height: 100%;
+            background: #fff;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        /* 标题栏样式 - 纯色蓝 */
+        .card-header {
+            color: white;
+            font-weight: 600;
+            padding: 15px 20px;
+            border-bottom: none;
+            background-color: #007bff; /* 经典 Bootstrap 蓝，单调且专业 */
+            border-radius: 8px 8px 0 0 !important;
+        }
+
+        /* 说明区域样式 */
+        .instruction-box {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 25px;
+            border-left: 4px solid #007bff; /* 统一使用蓝色边框 */
+        }
+        .instruction-title {
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .instruction-list {
+            padding-left: 20px;
+            margin-bottom: 0;
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.8;
+        }
+        .text-link { color: #007bff; text-decoration: underline; cursor: pointer; }
+
+        /* 图标大背景 - 稍微调淡一点 */
+        .bg-icon {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 5rem;
+            opacity: 0.05; /* 非常淡，不抢眼 */
+            color: #000;
+            z-index: 0;
+        }
+
+        /* 按钮统一样式 */
+        .btn-primary { background-color: #007bff; border-color: #007bff; }
+        .btn-primary:hover { background-color: #0056b3; border-color: #0056b3; }
+    </style>
 </head>
 <body>
-<div class="container">
-    <h4 class="mb-4">员工数据处理</h4>
+
+<div class="container pt-3">
+    <h4 class="mb-4 text-dark font-weight-bold" style="border-left: 5px solid #007bff; padding-left: 15px;">
+        员工数据处理
+    </h4>
+
     <div class="row">
-        <div class="col-md-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-body text-center">
-                    <h5 class="mb-3">批量导入</h5>
-                    <input type="file" class="form-control mb-3" id="importFile">
-                    <button class="btn btn-primary" onclick="alert('导入功能需配合Apache POI库，目前仅演示界面')">开始导入</button>
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-file-import mr-2"></i> 批量导入
+                </div>
+                <div class="card-body position-relative">
+                    <i class="fas fa-cloud-upload-alt bg-icon"></i>
+
+                    <h5 class="card-title mt-2">上传 Excel/CSV 文件</h5>
+                    <p class="text-muted small mb-4">请确保上传的文件符合系统要求的格式。</p>
+
+                    <div class="custom-file mb-3">
+                        <input type="file" class="custom-file-input" id="importFile" accept=".xlsx, .xls, .csv">
+                        <label class="custom-file-label" for="importFile" data-browse="浏览">选择文件...</label>
+                    </div>
+
+                    <button class="btn btn-primary btn-block shadow-sm" onclick="startImport()">
+                        <i class="fas fa-upload mr-1"></i> 开始导入数据
+                    </button>
+
+                    <div class="instruction-box">
+                        <div class="instruction-title"><i class="fas fa-info-circle mr-2 text-primary"></i>操作指引</div>
+                        <ul class="instruction-list">
+                            <li>请先下载 <span class="text-link" onclick="alert('模板下载功能开发中')">标准导入模板.xlsx</span>。</li>
+                            <li>支持的文件格式：<strong>.xlsx, .xls, .csv</strong>。</li>
+                            <li>单次导入数据建议不超过 <strong>500条</strong>，以免超时。</li>
+                            <li><span class="text-danger">注意：</span>工号重复的数据将会覆盖旧数据。</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-body text-center">
-                    <h5 class="mb-3">数据导出</h5>
-                    <p class="text-muted">导出所有员工信息为 CSV</p>
-                    <a href="api/emp/io" target="_blank" class="btn btn-success">下载文件</a>
+
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-file-export mr-2"></i> 数据导出
+                </div>
+                <div class="card-body position-relative">
+                    <i class="fas fa-cloud-download-alt bg-icon"></i>
+
+                    <h5 class="card-title mt-2">导出员工档案</h5>
+                    <p class="text-muted small mb-4">导出当前系统中所有在职员工的完整信息。</p>
+
+                    <div style="height: 38px;"></div> <a href="api/emp/io" target="_blank" class="btn btn-outline-primary btn-block shadow-sm">
+                    <i class="fas fa-download mr-1"></i> 下载 CSV 文件
+                </a>
+
+                    <div class="instruction-box">
+                        <div class="instruction-title"><i class="fas fa-lightbulb mr-2 text-primary"></i>导出说明</div>
+                        <ul class="instruction-list">
+                            <li>导出文件包含：工号、姓名、部门、职位、入职日期、联系方式等字段。</li>
+                            <li>默认导出格式为 <strong>CSV (逗号分隔值)</strong>，可用 Excel 直接打开。</li>
+                            <li>敏感信息（如身份证号）导出时会自动进行脱敏处理（如：510***123）。</li>
+                            <li>建议定期导出备份，以防数据丢失。</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 让文件选择框显示选中的文件名
+    document.querySelector('.custom-file-input').addEventListener('change', function(e){
+        var fileName = document.getElementById("importFile").files[0].name;
+        var nextSibling = e.target.nextElementSibling;
+        nextSibling.innerText = fileName;
+    });
+
+    function startImport() {
+        const fileInput = document.getElementById('importFile');
+        if(fileInput.files.length === 0) {
+            alert('请先选择要导入的文件！');
+            return;
+        }
+
+        const btn = document.querySelector('button[onclick="startImport()"]');
+        const originalText = btn.innerHTML;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 正在解析数据...';
+
+        setTimeout(() => {
+            alert('演示：后端导入接口需配合 Apache POI 解析 Excel，此处仅作界面展示。\n\n文件名: ' + fileInput.files[0].name);
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }, 1500);
+    }
+</script>
 </body>
 </html>

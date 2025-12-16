@@ -5,6 +5,7 @@ public class Dept {
     private String dept_name;
     private Integer dept_parent_id; // 允许为null
     private Integer dept_manage_id;
+    private String dept_desc;
     private int dept_status;
     private String create_time;
 
@@ -28,6 +29,8 @@ public class Dept {
     public void setDept_manage_id(Integer dept_manage_id) {
         this.dept_manage_id = dept_manage_id;
     }
+    public String getDept_desc() {return dept_desc;}
+    public void setDept_desc(String dept_desc) {this.dept_desc = dept_desc;}
     public int getDept_status() {
         return dept_status;
     }

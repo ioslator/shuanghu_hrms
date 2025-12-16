@@ -1,4 +1,4 @@
-package com.shuanghu.hrms.controller;
+package com.shuanghu.hrms;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.*;
 
-// ❌ 删除了 "/api/notices"，解决冲突
+// 删除了 "/api/notices"，解决冲突
 @WebServlet(urlPatterns = {"/api/users", "/api/logs", "/api/change_pwd", "/api/notice/publish"})
 public class SystemManageServlet extends HttpServlet {
     @Override
