@@ -2,211 +2,288 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>员工管理 - 双虎人力资源管理系统</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <title>全体员工信息列表</title>
     <style>
+        /* 1. 整体容器与卡片风格 */
         body {
-            background-color: #f8f9fa;
+            background-color: #f4f6f9; /* 浅灰底色衬托卡片 */
         }
         .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
-            border: 1px solid rgba(0,0,0,.125);
+            border: none;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            transition: transform 0.2s;
         }
-        .module-title {
-            border-bottom: 1px solid #dee2e6;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+
+        /* 2. 顶部渐变标题栏 */
+        .card-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            padding: 1.2rem 1.5rem;
+            border-bottom: none;
         }
-        .btn-primary {
-            background-color: #007bff;
+        .card-header h4 {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            font-size: 1.25rem;
+        }
+
+        /* 3. 搜索栏区域 */
+        .search-area {
+            background-color: #fff;
+            padding: 1.5rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .search-input-group .form-control {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            border: 1px solid #e0e0e0;
+            padding-left: 1.2rem;
+            height: calc(2.5rem + 2px); /* 略高一点更大气 */
+            box-shadow: none;
+        }
+        .search-input-group .form-control:focus {
             border-color: #007bff;
+            background-color: #fff;
         }
-        .table th {
+        .search-btn {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+            font-weight: 600;
+        }
+
+        /* 4. 表格样式优化 */
+        .table-custom {
+            margin-bottom: 0;
+        }
+        .table-custom thead th {
+            background-color: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+            border-bottom: 2px solid #e9ecef;
             border-top: none;
+            padding: 1rem 0.75rem;
+            white-space: nowrap; /* 防止表头换行 */
         }
-        .hidden {
-            display: none;
+        .table-custom tbody td {
+            vertical-align: middle;
+            padding: 1rem 0.75rem;
+            border-top: 1px solid #f1f1f1;
+            color: #555;
+            font-size: 0.95rem;
+        }
+        .table-custom tbody tr:hover {
+            background-color: #fdfdfd; /* 极淡的悬停色 */
+            transform: scale(1.002); /* 微妙的放大感 */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            z-index: 1;
+            position: relative;
+        }
+
+        /* 5. 头像样式 */
+        .avatar-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #17a2b8, #138496); /* 青色渐变 */
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-right: 15px;
+            box-shadow: 0 3px 6px rgba(23, 162, 184, 0.3);
+            flex-shrink: 0;
+        }
+
+        /* 6. 状态标签与按钮 */
+        .badge-status {
+            padding: 0.4em 0.8em;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            line-height: 32px;
+            text-align: center;
+            border-radius: 50%; /* 圆形按钮 */
+            transition: all 0.2s;
+            margin: 0 3px;
+        }
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+
+        /* 关键数据加粗 */
+        .text-emphasis {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        .text-dim {
+            color: #adb5bd;
+            font-style: italic;
+            font-size: 0.85rem;
         }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="employees-module">
-            <h2 class="module-title">员工管理</h2>
-            
-            <!-- 搜索和添加按钮 -->
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <input type="text" class="form-control" placeholder="搜索员工..." id="employeeSearch">
-                </div>
-                <div class="col-md-6 text-right">
-                    <button class="btn btn-primary" id="addEmployeeBtn">
-                        <i class="fas fa-plus"></i> 添加员工
-                    </button>
-                </div>
-            </div>
-            
-            <!-- 员工表格 -->
-            <div class="card">
-                <div class="card-body">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>姓名</th>
-                                <th>职位</th>
-                                <th>部门</th>
-                                <th>入职日期</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>张三</td>
-                                <td>软件工程师</td>
-                                <td>技术部</td>
-                                <td>2023-01-15</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary mr-1 edit-employee" data-id="1">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger delete-employee" data-id="1">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>2</td>
-                                <td>李四</td>
-                                <td>产品经理</td>
-                                <td>产品部</td>
-                                <td>2022-11-20</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary mr-1 edit-employee" data-id="2">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger delete-employee" data-id="2">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+
+<div class="container-fluid pt-4 pb-5">
+    <div class="card shadow-lg">
+        <div class="card-header text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-users mr-2"></i> 员工花名册</h4>
+                <span class="badge badge-light text-primary badge-pill px-3 py-2 shadow-sm" id="total-badge">共 0 人</span>
             </div>
         </div>
-        
-        <!-- 员工模态框 -->
-        <div class="modal" id="employeeModal" tabindex="-1" role="dialog" style="display: none;">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="employeeModalTitle">添加员工</h5>
-                        <button type="button" class="close" id="closeEmployeeModal">
-                            <span>&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="employeeForm">
-                            <input type="hidden" id="employeeId">
-                            <div class="form-group">
-                                <label>姓名</label>
-                                <input type="text" class="form-control" id="employeeName" required>
-                            </div>
-                            <div class="form-group">
-                                <label>职位</label>
-                                <input type="text" class="form-control" id="employeePosition" required>
-                            </div>
-                            <div class="form-group">
-                                <label>部门</label>
-                                <select class="form-control" id="employeeDepartment" required>
-                                    <option value="">请选择部门</option>
-                                    <option value="技术部" selected>技术部</option>
-                                    <option value="产品部">产品部</option>
-                                    <option value="设计部">设计部</option>
-                                    <option value="市场部">市场部</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>入职日期</label>
-                                <input type="date" class="form-control" id="employeeHireDate" required>
-                            </div>
-                        </form>
-                        <div class="alert alert-danger hidden" id="employeeAlert">
-                            请填写所有必填字段！
+
+        <div class="search-area">
+            <div class="row">
+                <div class="col-md-6 col-lg-5">
+                    <div class="input-group search-input-group shadow-sm">
+                        <input type="text" class="form-control" placeholder="输入姓名 / 工号 / 手机号..." id="searchInput">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary search-btn" onclick="search()">
+                                <i class="fas fa-search mr-1"></i> 查询
+                            </button>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" id="cancelEmployeeBtn">取消</button>
-                        <button type="button" class="btn btn-primary" id="saveEmployeeBtn">保存</button>
-                    </div>
+                </div>
+                <div class="col-md-6 col-lg-7 text-md-right mt-3 mt-md-0 d-flex align-items-center justify-content-end text-muted small">
+                    <i class="fas fa-info-circle mr-1"></i> 提示：默认展示在职员工，支持模糊搜索
                 </div>
             </div>
         </div>
+
+        <div class="table-responsive">
+            <table class="table table-custom align-middle">
+                <thead>
+                <tr>
+                    <th class="pl-4">员工姓名</th>
+                    <th>工号</th>
+                    <th>所属部门</th>
+                    <th>担任职位</th>
+                    <th>手机号码</th>
+                    <th>电子邮箱</th>
+                    <th>入职日期</th>
+                    <th class="text-center">状态</th>
+                    <th class="text-center" style="width: 120px;">操作</th>
+                </tr>
+                </thead>
+                <tbody id="tableBody">
+                <tr><td colspan="9" class="text-center py-5">
+                    <div class="d-flex flex-column align-items-center text-muted">
+                        <div class="spinner-border text-primary mb-3" role="status"></div>
+                        <span>正在同步员工档案...</span>
+                    </div>
+                </td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card-footer bg-light text-right py-3 small text-muted border-top-0">
+            数据来源于 HRMS 核心数据库
+        </div>
     </div>
-    
-    <script>
-        // 显示员工模态框
-        document.getElementById('addEmployeeBtn').addEventListener('click', function() {
-            // 清空表单
-            document.getElementById('employeeForm').reset();
-            document.getElementById('employeeId').value = '';
-            document.getElementById('employeeModalTitle').textContent = '添加员工';
-            document.getElementById('employeeAlert').classList.add('hidden');
-            document.getElementById('employeeModal').style.display = 'block';
-        });
-        
-        // 编辑员工
-        document.querySelectorAll('.edit-employee').forEach(function(button) {
-            button.addEventListener('click', function() {
-                // 这里应该从数据源获取员工信息，这里简化处理
-                document.getElementById('employeeId').value = this.getAttribute('data-id');
-                document.getElementById('employeeModalTitle').textContent = '编辑员工';
-                document.getElementById('employeeAlert').classList.add('hidden');
-                document.getElementById('employeeModal').style.display = 'block';
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        search();
+    });
+
+    function search() {
+        const keyword = document.getElementById('searchInput').value;
+        const tbody = document.getElementById('tableBody');
+        const badge = document.getElementById('total-badge');
+
+        // 优雅的加载状态
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-muted">
+            <div class="spinner-border text-primary spinner-border-sm mr-2"></div> 正在检索数据...
+        </td></tr>`;
+
+        fetch('api/search?keyword=' + keyword, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                renderTable(data);
+                // 更新顶部人数徽章
+                badge.innerText = `共 ${data ? data.length : 0} 人`;
+            })
+            .catch(err => {
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-danger">
+                    <i class="fas fa-exclamation-circle fa-2x mb-3"></i><br>数据加载失败，请检查网络连接
+                </td></tr>`;
             });
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-muted">
+                <img src="https://img.icons8.com/ios/50/d1d1d1/empty-box.png" class="mb-3" style="opacity:0.5;"/><br>
+                未找到匹配的员工信息
+            </td></tr>`;
+            return;
+        }
+
+        data.forEach(item => {
+            // 假设后端返回的数据结构，处理空值显示
+            const phone = item.emp_phone ? item.emp_phone : '<span class="text-dim">未录入</span>';
+            const email = item.emp_email ? item.emp_email : '<span class="text-dim">未录入</span>';
+            const nameChar = (item.emp_name || item.name || '?').charAt(0);
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="pl-4">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-circle shadow-sm">${nameChar}</div>
+                        <div>
+                            <div class="text-emphasis" style="font-size:1rem;">${item.emp_name || item.name}</div>
+                            <div class="small text-muted d-block d-md-none">${item.emp_no || ''}</div> </div>
+                    </div>
+                </td>
+                <td><span class="badge badge-light border text-secondary">${item.emp_no || '---'}</span></td>
+                <td><span class="text-dark font-weight-bold">${item.dept_name || '暂无部门'}</span></td>
+                <td><span class="text-info">${item.title_name || '未定级'}</span></td>
+                <td>${phone}</td>
+                <td class="text-truncate" style="max-width: 150px;" title="${item.emp_email || ''}">${email}</td>
+                <td>${item.hire_date || '-'}</td>
+                <td class="text-center">
+                    <span class="badge badge-success badge-status shadow-sm">在职</span>
+                </td>
+                <td class="text-center">
+                    <button class="btn btn-outline-primary btn-action" title="编辑档案" onclick="openModal(${item.emp_id})">
+                        <i class="fas fa-pen" style="font-size: 0.8rem;"></i>
+                    </button>
+                    <button class="btn btn-outline-danger btn-action" title="删除员工" onclick="delEmp(${item.emp_id})">
+                        <i class="fas fa-trash-alt" style="font-size: 0.8rem;"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
         });
-        
-        // 删除员工
-        document.querySelectorAll('.delete-employee').forEach(function(button) {
-            button.addEventListener('click', function() {
-                if (confirm('确定要删除这名员工吗？')) {
-                    // 这里应该调用删除API，这里简化处理
-                    alert('员工已删除');
-                }
-            });
-        });
-        
-        // 关闭员工模态框
-        document.getElementById('closeEmployeeModal').addEventListener('click', function() {
-            document.getElementById('employeeModal').style.display = 'none';
-        });
-        
-        document.getElementById('cancelEmployeeBtn').addEventListener('click', function() {
-            document.getElementById('employeeModal').style.display = 'none';
-        });
-        
-        // 保存员工
-        document.getElementById('saveEmployeeBtn').addEventListener('click', function() {
-            // 获取表单值
-            var name = document.getElementById('employeeName').value.trim();
-            var position = document.getElementById('employeePosition').value.trim();
-            var department = document.getElementById('employeeDepartment').value;
-            var hireDate = document.getElementById('employeeHireDate').value;
-            
-            // 验证必填字段
-            if (!name || !position || !department || !hireDate) {
-                document.getElementById('employeeAlert').classList.remove('hidden');
-                return;
-            }
-            
-            // 这里应该调用保存API，这里简化处理
-            document.getElementById('employeeAlert').classList.add('hidden');
-            document.getElementById('employeeModal').style.display = 'none';
-            alert('员工信息已保存');
-        });
-    </script>
+    }
+
+    function delEmp(empId) {
+        if(confirm('【警告】\n此操作将删除该员工的所有档案信息且不可恢复！\n\n确认要继续吗？')) {
+            // 这里对接实际删除接口
+            console.log('Request delete for:', empId);
+            // fetch('api/employee/delete?id=' + empId)...
+        }
+    }
+
+    // 预留编辑功能
+    function openModal(empId) {
+        alert('编辑功能正在开发中，员工ID: ' + empId);
+    }
+</script>
 </body>
 </html>

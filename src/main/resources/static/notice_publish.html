@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>发布公告</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>body{padding:20px;background:#f8f9fa;}</style>
+</head>
+<body>
+<div class="container">
+    <h4 class="mb-3">发布新公告</h4>
+    <div class="card"><div class="card-body">
+        <form>
+            <div class="form-group"><label>标题</label><input type="text" class="form-control" id="title"></div>
+            <div class="form-group"><label>发布部门</label><input type="text" class="form-control" value="人事部"></div>
+            <div class="form-group"><label>内容</label><textarea class="form-control" rows="5"></textarea></div>
+            <button type="button" class="btn btn-primary" onclick="pub()">立即发布</button>
+        </form>
+    </div></div>
+</div>
+<script>
+    function pub(){
+        const title = document.getElementById('title').value;
+        fetch('api/notice/publish?title='+title, {method:'POST'}).then(r=>r.json()).then(d=>{
+            alert(d.message);
+        });
+    }
+</script>
+</body>
+</html>

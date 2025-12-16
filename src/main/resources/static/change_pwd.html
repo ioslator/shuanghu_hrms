@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>修改密码</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>body{padding:20px;background:#f8f9fa;}</style>
+</head>
+<body>
+<div class="container mt-5" style="max-width: 500px;">
+    <div class="card shadow">
+        <div class="card-header bg-white"><h5>修改登录密码</h5></div>
+        <div class="card-body">
+            <form id="pwdForm">
+                <div class="form-group"><label>原密码</label><input type="password" class="form-control" required></div>
+                <div class="form-group"><label>新密码</label><input type="password" class="form-control" required></div>
+                <div class="form-group"><label>确认新密码</label><input type="password" class="form-control" required></div>
+                <button type="button" class="btn btn-primary w-100" onclick="submitPwd()">确认修改</button>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    function submitPwd() {
+        // 模拟请求
+        fetch('api/change_pwd', {method:'POST'}).then(r=>r.json()).then(d=>{
+            alert(d.message);
+            if(d.success) document.getElementById('pwdForm').reset();
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>添加员工</title>
+    <style>
+        /* 保持您喜欢的现代化样式 */
+        .card { border: none; border-radius: 0.75rem; overflow: hidden; }
+        .section-title { font-size: 1.1rem; font-weight: 700; color: #2c3e50; margin-bottom: 1.5rem; margin-top: 1rem; display: flex; align-items: center; }
+        .section-title::before { content: ''; display: inline-block; width: 6px; height: 24px; background: linear-gradient(to bottom, #007bff, #0056b3); margin-right: 12px; border-radius: 3px; }
+        .form-control { border: 1px solid #e9ecef; padding: 0.6rem 1rem; height: auto; font-size: 0.95rem; background-color: #fcfcfc; transition: all 0.3s ease; }
+        .form-control:focus { background-color: #fff; border-color: #80bdff; box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15); transform: translateY(-1px); }
+        label { font-weight: 600; color: #5a6268; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .required-star { color: #dc3545; margin-left: 4px; font-weight: bold; } /* 红色星号表示必填 */
+        .optional-tag { color: #adb5bd; font-size: 0.8em; font-weight: normal; margin-left: 5px; } /* 选填提示 */
+        .form-actions { background-color: #f8f9fa; margin: 0 -2rem -2rem -2rem; padding: 1.5rem 2rem; border-top: 1px solid #e9ecef; display: flex; justify-content: flex-end; align-items: center; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid pt-4 pb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white py-3" style="background: linear-gradient(45deg, #007bff, #0056b3);">
+                    <h4 class="mb-0"><i class="fas fa-user-plus mr-2"></i> 新增员工入职档案</h4>
+                </div>
+
+                <div class="card-body p-5">
+                    <form id="addEmployeeForm" onsubmit="return confirmAndSave();">
+
+                        <div class="section-title">核心信息 (必填)</div>
+                        <div class="row mb-4">
+                            <div class="col-md-4 mb-3">
+                                <label for="emp_name">员工姓名<span class="required-star">*</span></label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend"><span class="input-group-text bg-white text-muted"><i class="fas fa-user"></i></span></div>
+                                    <input type="text" class="form-control" id="emp_name" name="emp_name" placeholder="请输入真实姓名" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="emp_no">分配工号<span class="required-star">*</span></label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend"><span class="input-group-text bg-white text-muted"><i class="fas fa-id-badge"></i></span></div>
+                                    <input type="text" class="form-control font-weight-bold" id="emp_no" name="emp_no" placeholder="例如：EMP2025001" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="gender">性别<span class="required-star">*</span></label>
+                                <select class="form-control" id="gender" name="gender" required>
+                                    <option value="" disabled selected>请选择...</option>
+                                    <option value="男">男</option>
+                                    <option value="女">女</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-4 mb-3">
+                                <label for="dept_id">所属部门<span class="required-star">*</span></label>
+                                <select class="form-control" id="dept_id" name="dept_id" required>
+                                    <option value="">加载中...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="title_id">担任职位<span class="required-star">*</span></label>
+                                <select class="form-control" id="title_id" name="title_id" required>
+                                    <option value="">加载中...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="hire_date">入职日期<span class="required-star">*</span></label>
+                                <input type="date" class="form-control" id="hire_date" name="hire_date" required>
+                            </div>
+                        </div>
+
+                        <hr class="border-light my-4">
+
+                        <div class="section-title">详细档案 (选填)</div>
+                        <div class="row mb-2">
+                            <div class="col-md-4 mb-3">
+                                <label for="birth_date">出生日期<span class="optional-tag">(选填)</span></label>
+                                <input type="date" class="form-control" id="birth_date" name="birth_date">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="id_card">身份证号<span class="optional-tag">(选填)</span></label>
+                                <input type="text" class="form-control" id="id_card" name="id_card" placeholder="18位身份证号码">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="education">最高学历<span class="optional-tag">(选填)</span></label>
+                                <select class="form-control" id="education" name="education">
+                                    <option value="">请选择...</option>
+                                    <option value="博士">博士</option>
+                                    <option value="硕士">硕士</option>
+                                    <option value="本科">本科</option>
+                                    <option value="大专">大专</option>
+                                    <option value="高中及以下">高中及以下</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="emp_phone">手机号码<span class="optional-tag">(选填)</span></label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend"><span class="input-group-text bg-white text-muted"><i class="fas fa-mobile-alt"></i></span></div>
+                                    <input type="tel" class="form-control" id="emp_phone" name="emp_phone" placeholder="11位手机号">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="emp_email">电子邮箱<span class="optional-tag">(选填)</span></label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend"><span class="input-group-text bg-white text-muted"><i class="fas fa-envelope"></i></span></div>
+                                    <input type="email" class="form-control" id="emp_email" name="emp_email" placeholder="example@company.com">
+                                </div>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label for="emp_address">通讯地址<span class="optional-tag">(选填)</span></label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend"><span class="input-group-text bg-white text-muted"><i class="fas fa-map-marker-alt"></i></span></div>
+                                    <input type="text" class="form-control" id="emp_address" name="emp_address" placeholder="详细居住地址">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions mt-4 rounded-bottom">
+                            <div id="messageArea" class="mr-auto text-muted small"></div>
+                            <button type="reset" class="btn btn-light border mr-3 px-4"><i class="fas fa-redo mr-1"></i> 重置</button>
+                            <button type="submit" class="btn btn-success px-5 shadow-sm"><i class="fas fa-check-circle mr-1"></i> 确认录入</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDropdowns();
+        document.getElementById('hire_date').valueAsDate = new Date(); // 默认今天入职
+    });
+
+    function loadDropdowns() {
+        fetch('api/departments').then(res => res.json()).then(data => {
+            const select = document.getElementById('dept_id');
+            select.innerHTML = '<option value="">请选择部门...</option>';
+            data.forEach(item => { select.innerHTML += `<option value="${item.dept_id}">${item.dept_name}</option>`; });
+        }).catch(e => console.error(e));
+
+        fetch('api/titles').then(res => res.json()).then(data => {
+            const select = document.getElementById('title_id');
+            select.innerHTML = '<option value="">请选择职位...</option>';
+            data.forEach(item => { select.innerHTML += `<option value="${item.title_id}">${item.title_name}</option>`; });
+        }).catch(e => console.error(e));
+    }
+
+    function confirmAndSave() {
+        const name = document.getElementById('emp_name').value;
+        const msgArea = document.getElementById('messageArea');
+
+        if (!confirm(`【最终确认】\n\n即将录入新员工：${name}\n\n请确认信息无误，未填写的选填项将留空。`)) {
+            return false;
+        }
+
+        const form = document.getElementById('addEmployeeForm');
+        // 将 form 数据转换为 URL 编码字符串
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData).toString();
+
+        msgArea.innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin"></i> 数据提交中...</span>';
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+
+        fetch('api/employee/add?' + params, {
+            method: 'POST',
+        }).then(res => res.json()).then(result => {
+            submitBtn.disabled = false;
+            if (result.success) {
+                msgArea.innerHTML = '<span class="text-success font-weight-bold"><i class="fas fa-check-circle"></i> 员工录入成功！</span>';
+                form.reset();
+                document.getElementById('hire_date').valueAsDate = new Date();
+                loadDropdowns();
+                setTimeout(() => { msgArea.innerHTML = ''; }, 3000);
+            } else {
+                msgArea.innerHTML = `<span class="text-danger"><i class="fas fa-times-circle"></i> 录入失败: ${result.message || '系统异常'}</span>`;
+            }
+        }).catch(e => {
+            submitBtn.disabled = false;
+            msgArea.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-triangle"></i> 网络错误</span>`;
+        });
+
+        return false;
+    }
+</script>
+</body>
+</html>

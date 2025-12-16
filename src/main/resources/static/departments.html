@@ -2,202 +2,108 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>部门管理 - 双虎人力资源管理系统</title>
+    <title>部门管理</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
-            border: 1px solid rgba(0,0,0,.125);
-        }
-        .module-title {
-            border-bottom: 1px solid #dee2e6;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        .btn-primary {
-            background-color: #007bff;
-            border-color: #007bff;
-        }
-        .table th {
-            border-top: none;
-        }
-        .hidden {
-            display: none;
-        }
+        body { background-color: #f8f9fa; padding: 20px; }
+        .dept-card { border-left: 4px solid #007bff; transition: transform 0.2s; }
+        .dept-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="departments-module">
-            <h2 class="module-title">部门管理</h2>
-            
-            <!-- 添加部门按钮 -->
-            <div class="row mb-3">
-                <div class="col-md-12 text-right">
-                    <button class="btn btn-primary" id="addDepartmentBtn">
-                        <i class="fas fa-plus"></i> 添加部门
-                    </button>
-                </div>
-            </div>
-            
-            <!-- 部门表格 -->
-            <div class="card">
-                <div class="card-body">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>部门名称</th>
-                                <th>描述</th>
-                                <th>员工数量</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>技术部</td>
-                                <td>负责产品研发</td>
-                                <td>15</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary mr-1 edit-department" data-id="1">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger delete-department" data-id="1">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>2</td>
-                                <td>产品部</td>
-                                <td>负责产品规划</td>
-                                <td>8</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary mr-1 edit-department" data-id="2">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger delete-department" data-id="2">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>3</td>
-                                <td>设计部</td>
-                                <td>负责UI/UX设计</td>
-                                <td>5</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary mr-1 edit-department" data-id="3">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger delete-department" data-id="3">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+<div class="container-fluid">
+    <h4 class="mb-4 text-dark">组织架构管理</h4>
+
+    <div class="row mb-4">
+        <div class="col-12 text-right">
+            <button class="btn btn-primary" onclick="alert('功能开发中')"><i class="fas fa-sitemap"></i> 查看架构图</button>
+            <button class="btn btn-success" data-toggle="modal" data-target="#deptModal"><i class="fas fa-plus"></i> 添加部门</button>
         </div>
-        
-        <!-- 部门模态框 -->
-        <div class="modal" id="departmentModal" tabindex="-1" role="dialog" style="display: none;">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="departmentModalTitle">添加部门</h5>
-                        <button type="button" class="close" id="closeDepartmentModal">
-                            <span>&times;</span>
-                        </button>
+    </div>
+
+    <div class="row" id="deptList">
+        <div class="col-12 text-center text-muted">加载中...</div>
+    </div>
+</div>
+
+<div class="modal fade" id="deptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增部门</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label>部门名称</label>
+                        <input type="text" class="form-control" required>
                     </div>
-                    <div class="modal-body">
-                        <form id="departmentForm">
-                            <input type="hidden" id="departmentId">
-                            <div class="form-group">
-                                <label>部门名称</label>
-                                <input type="text" class="form-control" id="departmentName" required>
-                            </div>
-                            <div class="form-group">
-                                <label>描述</label>
-                                <textarea class="form-control" id="departmentDescription"></textarea>
-                            </div>
-                        </form>
-                        <div class="alert alert-danger hidden" id="departmentAlert">
-                            请填写所有必填字段！
-                        </div>
+                    <div class="form-group">
+                        <label>上级部门</label>
+                        <select class="form-control">
+                            <option value="0">无（顶级部门）</option>
+                            <option value="1">总经办</option>
+                        </select>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" id="cancelDepartmentBtn">取消</button>
-                        <button type="button" class="btn btn-primary" id="saveDepartmentBtn">保存</button>
+                    <div class="form-group">
+                        <label>部门描述</label>
+                        <textarea class="form-control" rows="3"></textarea>
                     </div>
-                </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" onclick="alert('添加成功')">提交</button>
             </div>
         </div>
     </div>
-    
-    <script>
-        // 显示部门模态框
-        document.getElementById('addDepartmentBtn').addEventListener('click', function() {
-            // 清空表单
-            document.getElementById('departmentForm').reset();
-            document.getElementById('departmentId').value = '';
-            document.getElementById('departmentModalTitle').textContent = '添加部门';
-            document.getElementById('departmentAlert').classList.add('hidden');
-            document.getElementById('departmentModal').style.display = 'block';
-        });
-        
-        // 编辑部门
-        document.querySelectorAll('.edit-department').forEach(function(button) {
-            button.addEventListener('click', function() {
-                // 这里应该从数据源获取部门信息，这里简化处理
-                document.getElementById('departmentId').value = this.getAttribute('data-id');
-                document.getElementById('departmentModalTitle').textContent = '编辑部门';
-                document.getElementById('departmentAlert').classList.add('hidden');
-                document.getElementById('departmentModal').style.display = 'block';
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('api/departments')
+            .then(res => res.json())
+            .then(renderDepts)
+            .catch(err => {
+                const mockData = [
+                    {id: 1, name: '技术研发中心', count: 24, manager: '张总', desc: '负责公司全线产品研发与维护'},
+                    {id: 2, name: '人力资源部', count: 5, manager: '李经理', desc: '负责招聘、培训、薪酬绩效'},
+                    {id: 3, name: '市场营销部', count: 12, manager: '王总监', desc: '负责品牌推广与市场拓展'},
+                    {id: 4, name: '财务部', count: 4, manager: '赵会计', desc: '负责公司财务核算与审计'}
+                ];
+                renderDepts(mockData);
             });
+    });
+
+    function renderDepts(data) {
+        const container = document.getElementById('deptList');
+        container.innerHTML = '';
+        data.forEach(dept => {
+            const html = `
+                    <div class="col-md-4 mb-4">
+                        <div class="card dept-card h-100 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h5 class="card-title mb-0 font-weight-bold">${dept.name}</h5>
+                                    <span class="badge badge-light border">${dept.count || dept.employeeCount || 0} 人</span>
+                                </div>
+                                <h6 class="card-subtitle mb-3 text-muted">负责人: ${dept.manager || '待定'}</h6>
+                                <p class="card-text text-secondary small">${dept.desc || dept.description || '暂无描述'}</p>
+                            </div>
+                            <div class="card-footer bg-white border-top-0 d-flex justify-content-between">
+                                <button class="btn btn-sm btn-outline-primary">编辑</button>
+                                <button class="btn btn-sm btn-outline-danger">撤销</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            container.innerHTML += html;
         });
-        
-        // 删除部门
-        document.querySelectorAll('.delete-department').forEach(function(button) {
-            button.addEventListener('click', function() {
-                if (confirm('确定要删除这个部门吗？')) {
-                    // 这里应该调用删除API，这里简化处理
-                    alert('部门已删除');
-                }
-            });
-        });
-        
-        // 关闭部门模态框
-        document.getElementById('closeDepartmentModal').addEventListener('click', function() {
-            document.getElementById('departmentModal').style.display = 'none';
-        });
-        
-        document.getElementById('cancelDepartmentBtn').addEventListener('click', function() {
-            document.getElementById('departmentModal').style.display = 'none';
-        });
-        
-        // 保存部门
-        document.getElementById('saveDepartmentBtn').addEventListener('click', function() {
-            // 获取表单值
-            var name = document.getElementById('departmentName').value.trim();
-            
-            // 验证必填字段
-            if (!name) {
-                document.getElementById('departmentAlert').classList.remove('hidden');
-                return;
-            }
-            
-            // 这里应该调用保存API，这里简化处理
-            document.getElementById('departmentAlert').classList.add('hidden');
-            document.getElementById('departmentModal').style.display = 'none';
-            alert('部门信息已保存');
-        });
-    </script>
+    }
+</script>
 </body>
 </html>

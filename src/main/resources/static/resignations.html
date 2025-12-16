@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>离职管理</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>body{padding:20px;background:#f8f9fa;}</style>
+</head>
+<body>
+<div class="container-fluid">
+    <h4 class="mb-3">离职/退休档案</h4>
+    <div class="card"><div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="bg-light"><tr><th>员工</th><th>类型</th><th>原因</th><th>日期</th><th>状态</th></tr></thead>
+            <tbody id="list"></tbody>
+        </table>
+    </div></div>
+</div>
+<script>
+    fetch('api/resignations').then(r=>r.json()).then(data=>{
+        const html = data.map(i=>`<tr><td>${i.emp_name}</td><td>${i.type}</td><td>${i.reason}</td><td>${i.apply_date}</td><td>${i.approve_status}</td></tr>`).join('');
+        document.getElementById('list').innerHTML = html || '<tr><td colspan="5" class="text-center">暂无离职记录</td></tr>';
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>我的公告</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>body{padding:20px;background:#f8f9fa;}</style>
+</head>
+<body>
+<div class="container">
+    <h4 class="mb-3">系统公告</h4>
+    <div class="list-group" id="list">
+        <div class="list-group-item text-muted">加载中...</div>
+    </div>
+</div>
+<script>
+    fetch('api/notices').then(r=>r.json()).then(data=>{
+        const html = data.map(i=>`<a href="#" class="list-group-item list-group-item-action"><div class="d-flex w-100 justify-content-between"><h5 class="mb-1">${i.notice_title}</h5><small>${i.create_time}</small></div><p class="mb-1 text-muted">${i.publish_dept || '系统消息'}</p></a>`).join('');
+        document.getElementById('list').innerHTML = html || '<div class="list-group-item">暂无公告</div>';
+    });
+</script>
+</body>
+</html>

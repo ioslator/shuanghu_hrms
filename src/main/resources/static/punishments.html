@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>处分记录</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>body{padding:20px;background:#f8f9fa;}</style>
+</head>
+<body>
+<div class="container-fluid">
+    <h4 class="mb-3 text-danger">处分记录</h4>
+    <div class="card"><div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="bg-light"><tr><th>员工</th><th>处分类型</th><th>原因</th><th>罚款金额</th><th>日期</th></tr></thead>
+            <tbody id="list"></tbody>
+        </table>
+    </div></div>
+</div>
+<script>
+    fetch('api/punishments').then(r=>r.json()).then(data=>{
+        const typeMap = {1:'警告',2:'罚款',3:'开除'};
+        const html = data.map(i=>`<tr><td>${i.emp_name}</td><td>${typeMap[i.punish_type]||'其他'}</td><td>${i.punish_reason}</td><td>￥${i.punish_amount}</td><td>${i.punish_date}</td></tr>`).join('');
+        document.getElementById('list').innerHTML = html || '<tr><td colspan="5" class="text-center">暂无处分记录</td></tr>';
+    });
+</script>
+</body>
+</html>
