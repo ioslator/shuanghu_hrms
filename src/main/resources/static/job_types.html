@@ -4,26 +4,172 @@
     <meta charset="UTF-8">
     <title>工种管理</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
-    <style>body{padding:20px;background:#f8f9fa;}</style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body{padding:20px;background:#f8f9fa;}
+        /* 状态按钮样式 */
+        .btn-status { cursor: pointer; width: 80px; }
+        .btn-status.on { background-color: #28a745; color: white; border-color: #28a745; }
+        .btn-status.off { background-color: #dc3545; color: white; border-color: #dc3545; }
+        .btn-status:hover { opacity: 0.8; }
+    </style>
 </head>
 <body>
 <div class="container-fluid">
-    <div class="d-flex justify-content-between mb-3">
-        <h4>工种管理</h4>
-        <button class="btn btn-primary btn-sm">新增工种</button>
+    <div class="d-flex justify-content-between mb-3 align-items-center">
+        <h4 class="text-dark font-weight-bold">工种管理</h4>
+        <button class="btn btn-primary shadow-sm" onclick="openAddModal()">
+            <i class="fas fa-plus"></i> 新增工种
+        </button>
     </div>
-    <div class="card"><div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="bg-light"><tr><th>ID</th><th>工种名称</th><th>描述</th><th>状态</th></tr></thead>
-            <tbody id="list"></tbody>
-        </table>
-    </div></div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="bg-light text-muted">
+                <tr>
+                    <th class="pl-4">ID</th>
+                    <th>工种名称</th>
+                    <th>描述</th>
+                    <th class="text-center">状态操作</th>
+                </tr>
+                </thead>
+                <tbody id="list">
+                <tr><td colspan="4" class="text-center py-4 text-muted">加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加新工种</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <form id="addForm">
+                    <div class="form-group">
+                        <label>工种名称 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="wName" required placeholder="例如：电工">
+                    </div>
+                    <div class="form-group">
+                        <label>职能描述</label>
+                        <textarea class="form-control" id="wDesc" rows="3" placeholder="简要描述工作内容..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitAdd()">确认添加</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    fetch('api/job_types').then(r=>r.json()).then(data=>{
-        const html = data.map(i=>`<tr><td>${i.work_type_id}</td><td>${i.work_type_name}</td><td>${i.work_type_desc||'-'}</td><td>${i.work_type_status==1?'启用':'禁用'}</td></tr>`).join('');
-        document.getElementById('list').innerHTML = html || '<tr><td colspan="4" class="text-center">暂无数据</td></tr>';
-    });
+    document.addEventListener('DOMContentLoaded', loadData);
+
+    // 1. 加载数据
+    function loadData() {
+        fetch('api/job_types')
+            .then(r => r.json())
+            .then(data => {
+                const list = document.getElementById('list');
+                if(!data || data.length === 0){
+                    list.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">暂无数据</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                data.forEach(item => {
+                    const isEnabled = (item.work_type_status == 1);
+                    // 根据状态生成不同的按钮
+                    const statusBtn = isEnabled
+                        ? `<button class="btn btn-sm btn-status on" onclick="toggleStatus(${item.work_type_id}, 0)">启用中</button>`
+                        : `<button class="btn btn-sm btn-status off" onclick="toggleStatus(${item.work_type_id}, 1)">已禁用</button>`;
+
+                    html += `
+                        <tr>
+                            <td class="pl-4 font-weight-bold text-secondary">${item.work_type_id}</td>
+                            <td class="font-weight-bold text-dark">${item.work_type_name}</td>
+                            <td class="text-muted small">${item.work_type_desc || '-'}</td>
+                            <td class="text-center">${statusBtn}</td>
+                        </tr>
+                    `;
+                });
+                list.innerHTML = html;
+            })
+            .catch(e => {
+                document.getElementById('list').innerHTML = '<tr><td colspan="4" class="text-center text-danger">加载失败</td></tr>';
+            });
+    }
+
+    // 2. 打开模态框
+    function openAddModal() {
+        document.getElementById('addForm').reset();
+        $('#addModal').modal('show');
+    }
+
+    // 3. 提交新增
+    function submitAdd() {
+        const name = document.getElementById('wName').value;
+        const desc = document.getElementById('wDesc').value;
+
+        if(!name) {
+            alert("请填写工种名称！");
+            return;
+        }
+
+        // 发送 POST 请求
+        const params = new URLSearchParams();
+        params.append('action', 'add');
+        params.append('name', name);
+        params.append('desc', desc);
+
+        fetch('api/work_type/manage', {
+            method: 'POST',
+            body: params
+        })
+            .then(r => r.json())
+            .then(res => {
+                if(res.success) {
+                    alert("添加成功！");
+                    $('#addModal').modal('hide');
+                    loadData(); // 刷新列表
+                } else {
+                    alert("添加失败：" + res.message);
+                }
+            });
+    }
+
+    // 4. 切换状态 (0禁用 / 1启用)
+    function toggleStatus(id, newStatus) {
+        const actionName = newStatus === 1 ? "启用" : "禁用";
+        if(!confirm(`确定要${actionName}该工种吗？`)) return;
+
+        const params = new URLSearchParams();
+        params.append('action', 'toggle');
+        params.append('id', id);
+        params.append('status', newStatus);
+
+        fetch('api/work_type/manage', {
+            method: 'POST',
+            body: params
+        })
+            .then(r => r.json())
+            .then(res => {
+                if(res.success) {
+                    loadData(); // 刷新列表更新状态显示
+                } else {
+                    alert("操作失败：" + res.message);
+                }
+            });
+    }
 </script>
 </body>
 </html>
