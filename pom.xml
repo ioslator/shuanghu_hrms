@@ -64,6 +64,13 @@
             <version>3.0.3</version>
         </dependency>
 
+        <!-- Apache Commons FileUpload 用于处理 multipart/form-data 请求 -->
+        <dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+            <version>1.5</version>
+        </dependency>
+
     </dependencies>
 
     <build>

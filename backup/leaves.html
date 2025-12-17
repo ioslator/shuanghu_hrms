@@ -245,6 +245,7 @@
     
     // 打开审批模态框
     function openApproveModal(appId, action) {
+        console.log('Opening approval modal for AppId:', appId, 'Action:', action);
         document.getElementById('approveAppId').value = appId;
         document.getElementById('approveModal').style.display = 'block';
     }
@@ -270,12 +271,22 @@
             return;
         }
         
+        // 显示处理中提示
+        const originalBtnText = event.target.textContent;
+        const buttons = document.querySelectorAll('#approveModal .btn');
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            if (btn === event.target) {
+                btn.textContent = '处理中...';
+            }
+        });
+        
         // 构造表单数据
         const formData = new FormData();
         formData.append('appId', appId);
         formData.append('status', status);
         // 实际应用中应从session获取管理员ID
-        formData.append('approveBy', '1');
+        formData.append('approveBy', '1'); // 这里暂时写死为1，实际应该从登录用户信息中获取
         
         console.log('Sending approval request with:', {appId, status});
         
@@ -286,6 +297,9 @@
         })
         .then(response => {
             console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error('Network response was not ok, status: ' + response.status);
+            }
             return response.json();
         })
         .then(data => {
@@ -301,7 +315,16 @@
         })
         .catch(error => {
             console.error('审批请求失败:', error);
-            alert('网络错误，请稍后重试');
+            alert('网络错误，请稍后重试: ' + error.message);
+        })
+        .finally(() => {
+            // 恢复按钮状态
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                if (btn === event.target) {
+                    btn.textContent = originalBtnText;
+                }
+            });
         });
     }
 </script>

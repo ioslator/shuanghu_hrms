@@ -12,7 +12,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 import java.io.IOException;
 import java.sql.*;
-import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -214,16 +213,10 @@ public class HrRecordServlet extends HttpServlet {
                 String status = null;
                 String approveBy = null;
                 
-                // 打印请求内容类型以便调试
-                System.out.println("Request Content-Type: " + req.getContentType());
-                System.out.println("Request Method: " + req.getMethod());
-                
                 // 首先尝试直接获取参数（适用于普通表单提交）
                 appId = req.getParameter("appId");
                 status = req.getParameter("status");
                 approveBy = req.getParameter("approveBy");
-                
-                System.out.println("Direct parameter extraction - AppId: " + appId + ", Status: " + status + ", ApproveBy: " + approveBy);
                 
                 // 如果getParameter获取不到数据，说明是multipart/form-data请求，需要特殊处理
                 if (appId == null) {
@@ -233,8 +226,6 @@ public class HrRecordServlet extends HttpServlet {
                     appId = params.get("appId");
                     status = params.get("status");
                     approveBy = params.get("approveBy");
-                    
-                    System.out.println("Multipart parameter extraction - AppId: " + appId + ", Status: " + status + ", ApproveBy: " + approveBy);
                 }
                 
                 // 参数验证
@@ -265,16 +256,14 @@ public class HrRecordServlet extends HttpServlet {
                 System.out.println("Processing leave approval - AppId: " + appId + ", Status: " + status + ", ApproveBy: " + approveBy);
                 
                 // 修复：使用正确的字段名application_id
-                String sql = "UPDATE leave_application SET status = ?, approve_by = ?, approve_time = ? WHERE application_id = ?";
+                String sql = "UPDATE leave_application SET status = ?, approve_by = ?, approve_time = NOW() WHERE application_id = ?";
                 
                 try (Connection conn = JdbcUtil.getConnection();
                      PreparedStatement ps = conn.prepareStatement(sql)) {
                     
                     ps.setString(1, status);
                     ps.setObject(2, approveBy != null && !approveBy.isEmpty() ? Integer.parseInt(approveBy) : null);
-                    // 设置当前时间作为审批时间
-                    ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-                    ps.setInt(4, Integer.parseInt(appId));
+                    ps.setInt(3, Integer.parseInt(appId));
                     
                     System.out.println("Executing SQL: " + sql);
                     System.out.println("Parameters - Status: " + status + ", ApproveBy: " + approveBy + ", AppId: " + appId);
@@ -289,26 +278,11 @@ public class HrRecordServlet extends HttpServlet {
                         response.put("message", "审批操作成功！");
                     } else {
                         response.put("success", false);
-                        response.put("message", "审批操作失败！可能申请ID不存在");
+                        response.put("message", "审批操作失败！");
                     }
                     resp.getWriter().write(response.toJSONString());
                 }
-            } catch (NumberFormatException e) {
-                System.err.println("Invalid number format in leave approval: " + e.getMessage());
-                e.printStackTrace();
-                JSONObject response = new JSONObject();
-                response.put("success", false);
-                response.put("message", "参数格式错误，请检查输入数据");
-                resp.getWriter().write(response.toJSONString());
-            } catch (SQLException e) {
-                System.err.println("Database error in leave approval: " + e.getMessage());
-                e.printStackTrace();
-                JSONObject response = new JSONObject();
-                response.put("success", false);
-                response.put("message", "数据库操作失败：" + e.getMessage());
-                resp.getWriter().write(response.toJSONString());
             } catch (Exception e) {
-                System.err.println("Unexpected error in leave approval: " + e.getMessage());
                 e.printStackTrace();
                 JSONObject response = new JSONObject();
                 response.put("success", false);
