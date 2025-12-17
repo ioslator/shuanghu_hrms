@@ -1,4 +1,4 @@
-package com.shuanghu.hrms.controller;
+package com.shuanghu.hrms;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
