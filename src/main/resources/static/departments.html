@@ -7,8 +7,28 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         body { background-color: #f8f9fa; padding: 20px; }
-        .dept-card { border-left: 4px solid #007bff; transition: transform 0.2s; }
+        .dept-card { border-left: 4px solid #007bff; transition: transform 0.2s; position: relative; height: 100%; }
         .dept-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .action-btns { position: absolute; bottom: 15px; right: 15px; }
+        .dept-desc-text {
+            color: #6c757d; font-size: 0.85rem;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; /* 限制显示两行，多了省略号 */
+            min-height: 40px;
+        }
+        /* 架构图样式保持不变... */
+        .tree ul { padding-top: 20px; position: relative; transition: all 0.5s; display: flex; justify-content: center; }
+        .tree li { float: left; text-align: center; list-style-type: none; position: relative; padding: 20px 5px 0 5px; transition: all 0.5s; }
+        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 1px solid #ccc; width: 50%; height: 20px; }
+        .tree li::after { right: auto; left: 50%; border-left: 1px solid #ccc; }
+        .tree li:only-child::after, .tree li:only-child::before { display: none; }
+        .tree li:only-child { padding-top: 0; }
+        .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
+        .tree li:last-child::before { border-right: 1px solid #ccc; border-radius: 0 5px 0 0; }
+        .tree li:first-child::after { border-radius: 5px 0 0 0; }
+        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 1px solid #ccc; width: 0; height: 20px; }
+        .tree div.node { border: 1px solid #ccc; padding: 5px 10px; text-decoration: none; color: #666; font-family: arial, verdana, tahoma; font-size: 11px; display: inline-block; border-radius: 5px; background: white; transition: all 0.5s; }
+        .tree div.node:hover, .tree div.node:hover+ul li div.node { background: #c8e4f8; color: #000; border: 1px solid #94a0b4; }
+        .tree div.node span { font-weight: bold; display: block; font-size: 12px;}
     </style>
 </head>
 <body>
@@ -17,8 +37,8 @@
 
     <div class="row mb-4">
         <div class="col-12 text-right">
-            <button class="btn btn-primary" onclick="alert('功能开发中')"><i class="fas fa-sitemap"></i> 查看架构图</button>
-            <button class="btn btn-success" data-toggle="modal" data-target="#deptModal"><i class="fas fa-plus"></i> 添加部门</button>
+            <button class="btn btn-info" onclick="showOrgChart()"><i class="fas fa-sitemap"></i> 查看架构图</button>
+            <button class="btn btn-success" onclick="openAddModal()"><i class="fas fa-plus"></i> 添加部门</button>
         </div>
     </div>
 
@@ -31,31 +51,50 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">新增部门</h5>
+                <h5 class="modal-title" id="modalTitle">新增部门</h5>
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <div class="modal-body">
-                <form>
+                <form id="deptForm">
+                    <input type="hidden" id="dept_id" name="dept_id">
+
                     <div class="form-group">
-                        <label>部门名称</label>
-                        <input type="text" class="form-control" required>
+                        <label>部门名称 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="dept_name" name="dept_name" required placeholder="例如：技术部">
                     </div>
+
                     <div class="form-group">
                         <label>上级部门</label>
-                        <select class="form-control">
+                        <select class="form-control" id="dept_parent_id" name="dept_parent_id">
                             <option value="0">无（顶级部门）</option>
-                            <option value="1">总经办</option>
                         </select>
                     </div>
+
                     <div class="form-group">
-                        <label>部门描述</label>
-                        <textarea class="form-control" rows="3"></textarea>
+                        <label>部门简介说明 <small class="text-muted">(选填)</small></label>
+                        <textarea class="form-control" id="dept_desc" name="dept_desc" rows="3" placeholder="简要描述该部门的主要职责..."></textarea>
                     </div>
+
+                    <input type="hidden" name="dept_status" value="1">
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
-                <button type="button" class="btn btn-primary" onclick="alert('添加成功')">提交</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitDept()">提交</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="chartModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">组织架构图</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body" style="overflow-x: auto; min-height: 400px;">
+                <div class="tree" id="orgChartContainer"></div>
             </div>
         </div>
     </div>
@@ -64,45 +103,195 @@
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    let allDepts = [];
+
     document.addEventListener('DOMContentLoaded', function() {
+        loadDepts();
+    });
+
+    function loadDepts() {
         fetch('api/departments')
             .then(res => res.json())
-            .then(renderDepts)
+            .then(data => {
+                allDepts = data;
+                renderDepts(data);
+            })
             .catch(err => {
-                const mockData = [
-                    {id: 1, name: '技术研发中心', count: 24, manager: '张总', desc: '负责公司全线产品研发与维护'},
-                    {id: 2, name: '人力资源部', count: 5, manager: '李经理', desc: '负责招聘、培训、薪酬绩效'},
-                    {id: 3, name: '市场营销部', count: 12, manager: '王总监', desc: '负责品牌推广与市场拓展'},
-                    {id: 4, name: '财务部', count: 4, manager: '赵会计', desc: '负责公司财务核算与审计'}
-                ];
-                renderDepts(mockData);
+                console.error(err);
+                document.getElementById('deptList').innerHTML = '<div class="col-12 text-center text-danger">加载失败</div>';
             });
-    });
+    }
 
     function renderDepts(data) {
         const container = document.getElementById('deptList');
         container.innerHTML = '';
+
+        if(data.length === 0) {
+            container.innerHTML = '<div class="col-12 text-center text-muted">暂无部门数据</div>';
+            return;
+        }
+
         data.forEach(dept => {
+            const parent = data.find(d => d.id === dept.parentId);
+            const parentName = parent ? parent.name : '顶级部门';
+
+            // 【修改】在卡片中显示 description
             const html = `
-                    <div class="col-md-4 mb-4">
-                        <div class="card dept-card h-100 shadow-sm">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h5 class="card-title mb-0 font-weight-bold">${dept.name}</h5>
-                                    <span class="badge badge-light border">${dept.count || dept.employeeCount || 0} 人</span>
-                                </div>
-                                <h6 class="card-subtitle mb-3 text-muted">负责人: ${dept.manager || '待定'}</h6>
-                                <p class="card-text text-secondary small">${dept.desc || dept.description || '暂无描述'}</p>
+                <div class="col-md-4 mb-4">
+                    <div class="card dept-card shadow-sm">
+                        <div class="card-body pb-5">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="card-title mb-0 font-weight-bold text-dark">${dept.name}</h5>
+                                <span class="badge badge-primary badge-pill">${dept.employeeCount || 0} 人</span>
                             </div>
-                            <div class="card-footer bg-white border-top-0 d-flex justify-content-between">
-                                <button class="btn btn-sm btn-outline-primary">编辑</button>
-                                <button class="btn btn-sm btn-outline-danger">撤销</button>
+                            <h6 class="card-subtitle mb-3 text-muted small">上级: ${parentName}</h6>
+
+                            <p class="card-text dept-desc-text" title="${dept.description}">
+                                ${dept.description}
+                            </p>
+
+                            <div class="action-btns">
+                                <button class="btn btn-outline-primary btn-sm mr-1" onclick="openEditModal(${dept.id})">编辑</button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteDept(${dept.id})">撤销</button>
                             </div>
                         </div>
                     </div>
-                `;
+                </div>
+            `;
             container.innerHTML += html;
         });
+    }
+
+    function openAddModal() {
+        document.getElementById('deptForm').reset();
+        document.getElementById('dept_id').value = '';
+        // 【新增】清空简介框
+        document.getElementById('dept_desc').value = '';
+        document.getElementById('modalTitle').innerText = '新增部门';
+
+        refreshParentSelect(null);
+        $('#deptModal').modal('show');
+    }
+
+    function openEditModal(id) {
+        const dept = allDepts.find(d => d.id === id);
+        if(!dept) return;
+
+        document.getElementById('modalTitle').innerText = '编辑部门';
+        document.getElementById('dept_id').value = dept.id;
+        document.getElementById('dept_name').value = dept.name;
+
+        // 【新增】回显简介信息
+        // 注意：这里用的是 description，因为后端 GetDeptListServlet 中 put 的 key 是 "description"
+        // 但输入框 id 是 "dept_desc"，因为 Tool1 需要匹配 Model 的属性名
+        document.getElementById('dept_desc').value = dept.description || '';
+
+        refreshParentSelect(id);
+        document.getElementById('dept_parent_id').value = dept.parentId || 0;
+
+        $('#deptModal').modal('show');
+    }
+
+    function refreshParentSelect(excludeId) {
+        const select = document.getElementById('dept_parent_id');
+        select.innerHTML = '<option value="0">无（顶级部门）</option>';
+
+        allDepts.forEach(dept => {
+            if (excludeId && dept.id === excludeId) return;
+            const option = document.createElement('option');
+            option.value = dept.id;
+            option.text = dept.name;
+            select.appendChild(option);
+        });
+    }
+
+    function submitDept() {
+        const id = document.getElementById('dept_id').value;
+        const form = document.getElementById('deptForm');
+        const formData = new FormData(form);
+
+        // 这里的参数里已经包含了 dept_desc
+        const params = new URLSearchParams(formData);
+
+        const api = id ? 'updateDept' : 'InsertDept';
+
+        fetch(api, { method: 'POST', body: params })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success || data == 1) {
+                    alert('操作成功！');
+                    $('#deptModal').modal('hide');
+                    loadDepts();
+                } else {
+                    alert('操作失败：' + (data.message || '未知错误'));
+                }
+            })
+            .catch(err => {
+                alert('操作可能成功，请刷新页面查看');
+                location.reload();
+            });
+    }
+
+    function deleteDept(id) {
+        if(!confirm('确定要撤销该部门吗？\n注意：如果部门下有员工，可能无法删除。')) return;
+
+        const params = new URLSearchParams();
+        params.append('tableName', 'dept');
+        params.append('keyName', 'dept_id');
+        params.append('keyValue', id);
+
+        fetch('delData', { method: 'POST', body: params })
+            .then(res => res.text())
+            .then(text => {
+                if(text === 'ok') {
+                    alert('撤销成功');
+                    loadDepts();
+                } else {
+                    alert('撤销失败：' + text);
+                }
+            })
+            .catch(e => alert('网络错误'));
+    }
+
+    // 架构图相关代码保持不变
+    function showOrgChart() {
+        if(allDepts.length === 0) { alert('暂无数据'); return; }
+        const treeData = buildTree(allDepts, 0);
+        if(treeData.length === 0) {
+            document.getElementById('orgChartContainer').innerHTML = '<h5 class="text-center text-muted mt-5">数据结构异常，无法生成树图</h5>';
+        } else {
+            const html = '<ul>' + createTreeHtml(treeData) + '</ul>';
+            document.getElementById('orgChartContainer').innerHTML = html;
+        }
+        $('#chartModal').modal('show');
+    }
+
+    function buildTree(items, parentId) {
+        let tree = [];
+        items.forEach(item => {
+            let itemPid = item.parentId || 0;
+            if (itemPid === parentId) {
+                const children = buildTree(items, item.id);
+                if (children.length) item.children = children;
+                tree.push(item);
+            }
+        });
+        return tree;
+    }
+
+    function createTreeHtml(tree) {
+        let html = '';
+        tree.forEach(node => {
+            html += `
+                <li>
+                    <div class="node">
+                        <span>${node.name}</span>
+                        ${node.employeeCount}人
+                    </div>
+                    ${node.children ? '<ul>' + createTreeHtml(node.children) + '</ul>' : ''}
+                </li>`;
+        });
+        return html;
     }
 </script>
 </body>

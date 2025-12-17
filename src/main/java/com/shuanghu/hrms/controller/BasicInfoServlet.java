@@ -1,4 +1,4 @@
-package com.shuanghu.hrms.controller;
+package com.shuanghu.hrms;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -38,12 +38,53 @@ public class BasicInfoServlet extends HttpServlet {
             while (rs.next()) {
                 JSONObject obj = new JSONObject();
                 for (int i = 1; i <= colCount; i++) {
-                    // 自动将数据库列名转为JSON Key (例如 work_type_name)
                     obj.put(md.getColumnLabel(i), rs.getObject(i));
                 }
                 list.add(obj);
             }
         } catch (Exception e) { e.printStackTrace(); }
         resp.getWriter().write(list.toString());
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        req.setCharacterEncoding("UTF-8");
+        resp.setContentType("application/json;charset=utf-8");
+        String uri = req.getRequestURI();
+        JSONObject result = new JSONObject();
+
+        if (uri.endsWith("titles")) {
+            // 修改职称薪资范围
+            String id = req.getParameter("id");
+            String range = req.getParameter("range");
+
+            if (id != null && range != null) {
+                String sql = "UPDATE title SET title_salary_range = ? WHERE title_id = ?";
+                try (Connection conn = JdbcUtil.getConnection();
+                     PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, range);
+                    ps.setInt(2, Integer.parseInt(id));
+                    int rows = ps.executeUpdate();
+                    if (rows > 0) {
+                        result.put("success", true);
+                        result.put("message", "修改成功");
+                    } else {
+                        result.put("success", false);
+                        result.put("message", "修改失败");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    result.put("success", false);
+                    result.put("message", "数据库错误: " + e.getMessage());
+                }
+            } else {
+                result.put("success", false);
+                result.put("message", "参数不完整");
+            }
+        } else {
+            result.put("success", false);
+            result.put("message", "不支持的接口");
+        }
+        resp.getWriter().write(result.toJSONString());
     }
 }
